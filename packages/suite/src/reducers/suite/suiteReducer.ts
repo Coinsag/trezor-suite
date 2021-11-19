@@ -8,9 +8,10 @@ import type { Locale } from '@suite-config/languages';
 import { isWeb, getWindowWidth } from '@suite-utils/env';
 import { ensureLocale } from '@suite-utils/l10n';
 import { getNumberFromPixelString } from '@trezor/utils';
+import type { InvityServerEnvironment } from '@wallet-types/invity';
 
 export interface DebugModeOptions {
-    invityAPIUrl?: string;
+    invityServerEnvironment?: InvityServerEnvironment;
     showDebugMenu: boolean;
 }
 
@@ -85,7 +86,7 @@ const initialState: SuiteState = {
         language: ensureLocale('en'),
         torOnionLinks: isWeb(),
         debug: {
-            invityAPIUrl: undefined,
+            invityServerEnvironment: undefined,
             showDebugMenu: false,
         },
         autodetect: {
