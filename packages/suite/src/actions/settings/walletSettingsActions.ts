@@ -3,6 +3,7 @@ import { WALLET_SETTINGS } from './constants';
 import * as suiteActions from '@suite-actions/suiteActions';
 import { Dispatch, GetState } from '@suite-types';
 import { Network } from '@wallet-types';
+import { DerivationType } from '@wallet-types/cardano';
 import { NETWORKS } from '@wallet-config';
 import { toTorUrl } from '@suite-utils/tor';
 import type { BackendSettings } from '@wallet-reducers/settingsReducer';
@@ -19,6 +20,10 @@ export type WalletSettingsAction =
     | {
           type: typeof WALLET_SETTINGS.SET_BACKEND;
           payload: BackendSettings;
+      }
+    | {
+          type: typeof WALLET_SETTINGS.SET_CARDANO_DERIVATION_TYPE;
+          payload: DerivationType;
       }
     | {
           type: typeof WALLET_SETTINGS.REMOVE_BACKEND;
@@ -89,6 +94,11 @@ export const setBackend = (payload: BackendSettings): WalletSettingsAction => ({
 export const removeBackend = (coin: Network['symbol']): WalletSettingsAction => ({
     type: WALLET_SETTINGS.REMOVE_BACKEND,
     payload: { coin },
+});
+
+export const setCardanoDerivationType = (payload: DerivationType): WalletSettingsAction => ({
+    type: WALLET_SETTINGS.SET_CARDANO_DERIVATION_TYPE,
+    payload,
 });
 
 export const torifyBackends = () => async (dispatch: Dispatch, getState: GetState) => {

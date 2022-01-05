@@ -6,6 +6,11 @@ import { NETWORKS } from '@wallet-config';
 import { Network } from '@suite/types/wallet';
 import { CustomBackends } from './components/CustomBackends';
 
+// Sub components
+import CardanoDerivationSettings from './components/CardanoDerivationSettings';
+// import CustomExplorerUrl from './components/CustomExplorerUrl';
+// import AccountUnits from './components/AccountUnits';
+
 const Section = styled.div`
     display: flex;
     flex-direction: column;
@@ -62,6 +67,11 @@ const AdvancedCoinSettings = ({ coin, onCancel }: Props) => {
             <Section>
                 <CustomBackends network={network} onCancel={onCancel} />
             </Section>
+            {network.networkType === 'cardano' && (
+                <Section>
+                    <CardanoDerivationSettings />
+                </Section>
+            )}
             {/* <CustomExplorerUrl /> */}
         </Modal>
     ) : null;
