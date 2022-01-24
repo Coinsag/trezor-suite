@@ -14,6 +14,7 @@ export const useCoinmarketRedirect = () => {
         saveBuyTransactionDetailId,
         saveSellQuoteRequest,
         setSellIsFromRedirect,
+        saveSellTransactionDetailId,
         saveComposedTransactionInfo,
         goto,
     } = useActions({
@@ -22,6 +23,7 @@ export const useCoinmarketRedirect = () => {
         saveBuyTransactionDetailId: coinmarketBuyActions.saveTransactionDetailId,
         saveSellQuoteRequest: coinmarketSellActions.saveQuoteRequest,
         setSellIsFromRedirect: coinmarketSellActions.setIsFromRedirect,
+        saveSellTransactionDetailId: coinmarketSellActions.saveTransactionId,
         saveComposedTransactionInfo: coinmarketCommonActions.saveComposedTransactionInfo,
         goto: routerActions.goto,
     });
@@ -46,6 +48,7 @@ export const useCoinmarketRedirect = () => {
         cryptoCurrency: string;
         amount: string;
         country: string;
+        orderId?: string;
         selectedFee?: FeeLevel['label'];
         feePerByte?: string;
         feeLimit?: string;
@@ -95,6 +98,7 @@ export const useCoinmarketRedirect = () => {
             cryptoCurrency,
             amount,
             country,
+            orderId,
             feeLimit,
             feePerByte,
             selectedFee,
@@ -123,6 +127,7 @@ export const useCoinmarketRedirect = () => {
             fee: '', // fee is not passed by redirect, will be recalculated
         };
         saveComposedTransactionInfo({ selectedFee: selectedFee || 'normal', composed });
+        saveSellTransactionDetailId(orderId);
         goto('wallet-coinmarket-sell-offers', {
             params: { symbol, accountIndex: index, accountType },
         });
