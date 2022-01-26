@@ -5800,6 +5800,10 @@ export default defineMessages({
         defaultMessage:
             'Trezor Suite uses Blockbook for the wallet backend. You can also use your own custom blockbook.',
     },
+    SETTINGS_ADV_COIN_BLOCKFROST_DESCRIPTION: {
+        id: 'SETTINGS_ADV_COIN_BLOCKFROST_DESCRIPTION',
+        defaultMessage: 'Trezor Suite uses Blockfrost websocket-link for the wallet backend.',
+    },
     SETTINGS_ADV_COIN_URL_INPUT_PLACEHOLDER: {
         id: 'SETTINGS_ADV_COIN_URL_INPUT_PLACEHOLDER',
         defaultMessage: 'e.g. {url}',

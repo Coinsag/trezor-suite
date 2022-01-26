@@ -28,6 +28,8 @@ const getUrlPlaceholder = (coin: Network['symbol'], type: BackendOption) => {
     switch (type) {
         case 'blockbook':
             return `https://${coin}1.trezor.io/`;
+        case 'blockfrost':
+            return `wss://blockfrost.io`;
         case 'electrum':
             return `electrum.foobar.com:50001:t`;
         default:
