@@ -13,65 +13,52 @@ import { resolveStaticPath } from '@suite-utils/build';
 export const cardanoPatch = () => (_dispatch: Dispatch, getState: GetState) => {
     // Pass additional parameter `useCardanoDerivation` to Trezor Connect methods
     // in order to enable cardano derivation on a device
-    const patchedMethods = [
-        'cardanoGetAddress',
-        'cardanoGetNativeScriptHash',
-        'cardanoGetPublicKey',
-        'cardanoSignTransaction',
-        'cipherKeyValue',
-        'composeTransaction',
-        'ethereumGetAddress',
-        'ethereumGetPublicKey',
-        'ethereumSignMessage',
-        'ethereumSignTransaction',
-        'ethereumVerifyMessage',
-        'getAccountInfo',
-        'getAddress',
-        'getDeviceState',
-        'getFeatures',
-        'getPublicKey',
-        'nemGetAddress',
-        'nemSignTransaction',
-        'pushTransaction',
-        'rippleGetAddress',
-        'rippleSignTransaction',
-        'signMessage',
-        'signTransaction',
-        'stellarGetAddress',
-        'stellarSignTransaction',
-        'tezosGetAddress',
-        'tezosGetPublicKey',
-        'tezosSignTransaction',
-        'eosGetPublicKey',
-        'eosSignTransaction',
-        'binanceGetAddress',
-        'binanceGetPublicKey',
-        'binanceSignTransaction',
-        'verifyMessage',
-        'resetDevice',
-        'wipeDevice',
-        'applyFlags',
-        'applySettings',
-        'backupDevice',
-        'changePin',
-        'firmwareUpdate',
-        'recoveryDevice',
-        'rebootToBootloader',
-    ] as const;
-    patchedMethods.forEach(key => {
-        // typescript complains about params and return type, need to be "any"
-        const original: any = TrezorConnect[key];
-        if (!original) return;
-        (TrezorConnect[key] as any) = async (params: any) => {
-            const { enabledNetworks } = getState().wallet.settings;
-            const cardanoEnabled = !!enabledNetworks.find(a => a === 'ada' || a === 'tada');
-            const result = await original({
-                ...params,
-                useCardanoDerivation: cardanoEnabled,
-            });
-            return result;
-        };
-    });
+    type ConnectKey = keyof typeof TrezorConnect;
+
+    const blacklist: ConnectKey[] = [
+        'manifest',
+        'init',
+        'getSettings',
+        'on',
+        'off',
+        'removeAllListeners',
+        'uiResponse',
+        'blockchainGetAccountBalanceHistory',
+        'blockchainGetCurrentFiatRates',
+        'blockchainGetFiatRatesForTimestamps',
+        'blockchainDisconnect',
+        'blockchainEstimateFee',
+        'blockchainGetTransactions',
+        'blockchainSetCustomBackend',
+        'blockchainSubscribe',
+        'blockchainSubscribeFiatRates',
+        'blockchainUnsubscribe',
+        'blockchainUnsubscribeFiatRates',
+        'customMessage',
+        'requestLogin',
+        'getCoinInfo',
+        'dispose',
+        'cancel',
+        'renderWebUSBButton',
+        'disableWebUSB',
+    ];
+
+    Object.keys(TrezorConnect)
+        .filter(k => !blacklist.includes(k as ConnectKey))
+        .forEach(key => {
+            // typescript complains about params and return type, need to be "any"
+            const original: any = TrezorConnect[key as ConnectKey];
+            if (!original) return;
+            (TrezorConnect[key as ConnectKey] as any) = async (params: any) => {
+                const { enabledNetworks } = getState().wallet.settings;
+                const cardanoEnabled = !!enabledNetworks.find(a => a === 'ada' || a === 'tada');
+                const result = await original({
+                    ...params,
+                    useCardanoDerivation: cardanoEnabled,
+                });
+                return result;
+            };
+        });
 };
 
 export const init = () => async (dispatch: Dispatch, getState: GetState) => {
