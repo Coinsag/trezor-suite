@@ -12,7 +12,13 @@ const Capitalize = styled.span`
 const getBackendOptions = (network: Network) => {
     const backends: BackendOption[] = [];
     if (network.symbol !== 'regtest') backends.push('default');
-    if (network.networkType !== 'ripple') backends.push('blockbook');
+
+    if (network.networkType === 'cardano') {
+        backends.push('blockfrost');
+    } else if (network.networkType !== 'ripple') {
+        backends.push('blockbook');
+    }
+
     // if (network.symbol === 'btc') backends.push('electrum');
     return backends.map(backend => ({
         label:

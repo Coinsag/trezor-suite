@@ -17,6 +17,8 @@ const validateUrl = (type: BackendOption, value: string) => {
     switch (type) {
         case 'blockbook':
             return isUrl(value);
+        case 'blockfrost':
+            return isUrl(value);
         case 'electrum':
             return /^[a-zA-Z0-9.]+:[0-9]{1,5}:[ts]$/.test(value);
         default:
@@ -119,9 +121,11 @@ export const useBackendsForm = (coin: Network['symbol']) => {
     const save = () => {
         const { type, urls } = currentValues;
         const lastUrl = input.value && !input.error ? [input.value] : [];
+        const defaultType = coin === 'ada' || coin === 'tada' ? 'blockfrost' : 'blockbook';
+
         setBackend({
             coin,
-            type: type === 'default' ? 'blockbook' : type,
+            type: type === 'default' ? defaultType : type,
             urls: type === 'default' ? [] : urls.concat(lastUrl),
         });
     };

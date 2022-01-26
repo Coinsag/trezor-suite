@@ -63,15 +63,17 @@ const AdvancedCoinSettings = ({ coin, onCancel }: Props) => {
                 </Heading>
             }
         >
-            {/* <AccountUnits /> */}
-            <Section>
-                <CustomBackends network={network} onCancel={onCancel} />
-            </Section>
             {network.networkType === 'cardano' && (
                 <Section>
                     <CardanoDerivationSettings />
                 </Section>
             )}
+
+            {/* <AccountUnits /> */}
+            <Section>
+                <CustomBackends network={network} onCancel={onCancel} />
+            </Section>
+
             {/* <CustomExplorerUrl /> */}
         </Modal>
     ) : null;

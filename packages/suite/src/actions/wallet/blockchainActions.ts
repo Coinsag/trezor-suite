@@ -150,7 +150,10 @@ export const setCustomBackend = (coin?: Network['symbol']) => (_: Dispatch, getS
     if (!coins.length) return;
 
     const promises = coins.map(coin => {
-        const { type, urls } = backends[coin] ?? { type: 'blockbook', urls: [] };
+        const { type, urls } = backends[coin] ?? {
+            type: coin === 'ada' || coin === 'tada' ? 'blockfrost' : 'blockbook',
+            urls: [],
+        };
         return TrezorConnect.blockchainSetCustomBackend({
             coin,
             blockchainLink: {
