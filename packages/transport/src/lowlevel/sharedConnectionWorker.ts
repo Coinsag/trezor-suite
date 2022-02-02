@@ -14,20 +14,6 @@ interface LockResult {
     good?: boolean;
 }
 
-// TODO:
-// proper ts configuration for lib webworker
-// @ts-expect-error
-if (typeof onconnect !== 'undefined') {
-    // @ts-expect-error
-    const onconnect = e => {
-        const port = e.ports[0];
-        // @ts-expect-error
-        port.onmessage = e => {
-            handleMessage(e.data, port);
-        };
-    };
-}
-
 // path => session
 const normalSessions: { [path: string]: string } = {};
 const debugSessions: { [path: string]: string } = {};
@@ -64,50 +50,8 @@ function waitInQueue(fn: () => Promise<void>) {
     waitPromise = res.catch(() => {});
 }
 
-function handleMessage(
-    { id, message }: { id: number; message: MessageToSharedWorker },
-    port: PortObject,
-) {
-    if (message.type === 'acquire-intent') {
-        const { path } = message;
-        const { previous } = message;
-        const { debug } = message;
-        waitInQueue(() => handleAcquireIntent(path, id, port, previous, debug));
-    }
-    if (message.type === 'acquire-done') {
-        handleAcquireDone(id); // port is the same as original
-    }
-    if (message.type === 'acquire-failed') {
-        handleAcquireFailed(id); // port is the same as original
-    }
-    if (message.type === 'get-sessions') {
-        waitInQueue(() => handleGetSessions(id, port));
-    }
-
-    if (message.type === 'get-sessions-and-disconnect') {
-        const { devices } = message;
-        waitInQueue(() => handleGetSessions(id, port, devices));
-    }
-
-    if (message.type === 'release-onclose') {
-        const { session } = message;
-        waitInQueue(() => handleReleaseOnClose(session));
-    }
-
-    if (message.type === 'release-intent') {
-        const { session } = message;
-        const { debug } = message;
-        waitInQueue(() => handleReleaseIntent(session, debug, id, port));
-    }
-    if (message.type === 'release-done') {
-        handleReleaseDone(id); // port is the same as original
-    }
-    if (message.type === 'enumerate-intent') {
-        waitInQueue(() => handleEnumerateIntent(id, port));
-    }
-    if (message.type === 'enumerate-done') {
-        handleReleaseDone(id); // port is the same as original
-    }
+function sendBack(message: MessageFromSharedWorker, id: number, port: PortObject) {
+    port.postMessage({ id, message });
 }
 
 function handleEnumerateIntent(id: number, port: PortObject) {
@@ -240,8 +184,64 @@ function handleAcquireIntent(
     });
 }
 
-function sendBack(message: MessageFromSharedWorker, id: number, port: PortObject) {
-    port.postMessage({ id, message });
+function handleMessage(
+    { id, message }: { id: number; message: MessageToSharedWorker },
+    port: PortObject,
+) {
+    if (message.type === 'acquire-intent') {
+        const { path } = message;
+        const { previous } = message;
+        const { debug } = message;
+        waitInQueue(() => handleAcquireIntent(path, id, port, previous, debug));
+    }
+    if (message.type === 'acquire-done') {
+        handleAcquireDone(id); // port is the same as original
+    }
+    if (message.type === 'acquire-failed') {
+        handleAcquireFailed(id); // port is the same as original
+    }
+    if (message.type === 'get-sessions') {
+        waitInQueue(() => handleGetSessions(id, port));
+    }
+
+    if (message.type === 'get-sessions-and-disconnect') {
+        const { devices } = message;
+        waitInQueue(() => handleGetSessions(id, port, devices));
+    }
+
+    if (message.type === 'release-onclose') {
+        const { session } = message;
+        waitInQueue(() => handleReleaseOnClose(session));
+    }
+
+    if (message.type === 'release-intent') {
+        const { session } = message;
+        const { debug } = message;
+        waitInQueue(() => handleReleaseIntent(session, debug, id, port));
+    }
+    if (message.type === 'release-done') {
+        handleReleaseDone(id); // port is the same as original
+    }
+    if (message.type === 'enumerate-intent') {
+        waitInQueue(() => handleEnumerateIntent(id, port));
+    }
+    if (message.type === 'enumerate-done') {
+        handleReleaseDone(id); // port is the same as original
+    }
+}
+
+// TODO:
+// proper ts configuration for lib webworker
+// @ts-expect-error
+if (typeof onconnect !== 'undefined') {
+    // @ts-expect-error
+    const onconnect = e => {
+        const port = e.ports[0];
+        // @ts-expect-error
+        port.onmessage = e => {
+            handleMessage(e.data, port);
+        };
+    };
 }
 
 // when shared worker is not loaded as a shared loader, use it as a module instead
