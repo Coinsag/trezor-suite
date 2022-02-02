@@ -11,6 +11,8 @@ import WebUsbPlugin from './lowlevel/webusb';
 import * as protobuf from 'protobufjs/light';
 import * as Long from 'long';
 
+console.log('MEOOOOOOOOOOOOOOOOOOW');
+
 protobuf.util.Long = Long;
 protobuf.configure();
 

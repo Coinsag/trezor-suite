@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 // To ensure that two website don't read from/to Trezor at the same time, I need a sharedworker
 // to synchronize them.
 // However, sharedWorker cannot directly use webusb API... so I need to send messages
@@ -11,11 +9,19 @@ import type { Deferred } from '../utils/defered';
 import type { TrezorDeviceInfoDebug } from './sharedPlugin';
 import type { MessageFromSharedWorker, MessageToSharedWorker } from './withSharedConnections';
 
-// @ts-ignore
-if (typeof onconnect !== `undefined`) {
-    // @ts-ignore
+interface LockResult {
+    id: number;
+    good?: boolean;
+}
+
+// TODO:
+// proper ts configuration for lib webworker
+// @ts-expect-error
+if (typeof onconnect !== 'undefined') {
+    // @ts-expect-error
     onconnect = function (e) {
         const port = e.ports[0];
+        // @ts-expect-error
         port.onmessage = function (e) {
             handleMessage(e.data, port);
         };
@@ -26,18 +32,18 @@ if (typeof onconnect !== `undefined`) {
 const normalSessions: { [path: string]: string } = {};
 const debugSessions: { [path: string]: string } = {};
 
-let lock: Deferred<Object> | null = null;
+let lock: Deferred<LockResult> | null = null;
 let waitPromise: Promise<void> = Promise.resolve();
 
-type PortObject = { postMessage: (message: Object) => void };
+type PortObject = { postMessage: (message: { id: number; message: any }) => void };
 
-function startLock(): void {
-    const newLock = createDeferred();
+function startLock() {
+    const newLock = createDeferred<LockResult>();
     lock = newLock;
-    setTimeout(() => newLock.reject(new Error(`Timed out`)), 10 * 1000);
+    setTimeout(() => newLock.reject(new Error('Timed out')), 10 * 1000);
 }
 
-function releaseLock(obj: Object): void {
+function releaseLock(obj: LockResult) {
     if (lock == null) {
         // TODO: ???
         return;
@@ -48,7 +54,7 @@ function releaseLock(obj: Object): void {
 function waitForLock() {
     if (lock == null) {
         // TODO: ???
-        return Promise.reject(new Error(`???`));
+        return Promise.reject(new Error('???'));
     }
     return lock.promise;
 }
@@ -62,56 +68,55 @@ function handleMessage(
     { id, message }: { id: number; message: MessageToSharedWorker },
     port: PortObject,
 ) {
-    if (message.type === `acquire-intent`) {
+    if (message.type === 'acquire-intent') {
         const { path } = message;
         const { previous } = message;
         const { debug } = message;
-        waitInQueue(() => handleAcquireIntent(path, previous, debug, id, port));
+        waitInQueue(() => handleAcquireIntent(path, id, port, previous, debug));
     }
-    if (message.type === `acquire-done`) {
+    if (message.type === 'acquire-done') {
         handleAcquireDone(id); // port is the same as original
     }
-    if (message.type === `acquire-failed`) {
+    if (message.type === 'acquire-failed') {
         handleAcquireFailed(id); // port is the same as original
     }
-    if (message.type === `get-sessions`) {
+    if (message.type === 'get-sessions') {
         waitInQueue(() => handleGetSessions(id, port));
     }
 
-    if (message.type === `get-sessions-and-disconnect`) {
+    if (message.type === 'get-sessions-and-disconnect') {
         const { devices } = message;
         waitInQueue(() => handleGetSessions(id, port, devices));
     }
 
-    if (message.type === `release-onclose`) {
+    if (message.type === 'release-onclose') {
         const { session } = message;
         waitInQueue(() => handleReleaseOnClose(session));
     }
 
-    if (message.type === `release-intent`) {
+    if (message.type === 'release-intent') {
         const { session } = message;
         const { debug } = message;
         waitInQueue(() => handleReleaseIntent(session, debug, id, port));
     }
-    if (message.type === `release-done`) {
+    if (message.type === 'release-done') {
         handleReleaseDone(id); // port is the same as original
     }
-    if (message.type === `enumerate-intent`) {
+    if (message.type === 'enumerate-intent') {
         waitInQueue(() => handleEnumerateIntent(id, port));
     }
-    if (message.type === `enumerate-done`) {
+    if (message.type === 'enumerate-done') {
         handleReleaseDone(id); // port is the same as original
     }
 }
 
-function handleEnumerateIntent(id: number, port: PortObject): Promise<void> {
+function handleEnumerateIntent(id: number, port: PortObject) {
     startLock();
-    sendBack({ type: `ok` }, id, port);
+    sendBack({ type: 'ok' }, id, port);
 
     // if lock times out, promise rejects and queue goes on
-    // @ts-ignore
-    return waitForLock().then((obj: { id: number }) => {
-        sendBack({ type: `ok` }, obj.id, port);
+    return waitForLock().then(obj => {
+        sendBack({ type: 'ok' }, obj.id, port);
     });
 }
 
@@ -119,7 +124,7 @@ function handleReleaseDone(id: number) {
     releaseLock({ id });
 }
 
-function handleReleaseOnClose(session: string): Promise<void> {
+function handleReleaseOnClose(session: string) {
     let path_: string | null = null;
     Object.keys(normalSessions).forEach(kpath => {
         if (normalSessions[kpath] === session) {
@@ -136,12 +141,7 @@ function handleReleaseOnClose(session: string): Promise<void> {
     return Promise.resolve();
 }
 
-function handleReleaseIntent(
-    session: string,
-    debug: boolean,
-    id: number,
-    port: PortObject,
-): Promise<void> {
+function handleReleaseIntent(session: string, debug: boolean, id: number, port: PortObject) {
     let path_: string | null = null;
     const sessions = debug ? debugSessions : normalSessions;
     const otherSessions = !debug ? debugSessions : normalSessions;
@@ -151,7 +151,7 @@ function handleReleaseIntent(
         }
     });
     if (path_ == null) {
-        sendBack({ type: `double-release` }, id, port);
+        sendBack({ type: 'double-release' }, id, port);
         return Promise.resolve();
     }
 
@@ -160,22 +160,17 @@ function handleReleaseIntent(
     const otherSession = otherSessions[path];
 
     startLock();
-    sendBack({ type: `path`, path, otherSession }, id, port);
+    sendBack({ type: 'path', path, otherSession }, id, port);
 
     // if lock times out, promise rejects and queue goes on
-    // @ts-ignore
-    return waitForLock().then((obj: { id: number }) => {
+    return waitForLock().then(obj => {
         // failure => nothing happens, but still has to reply "ok"
         delete sessions[path];
-        sendBack({ type: `ok` }, obj.id, port);
+        sendBack({ type: 'ok' }, obj.id, port);
     });
 }
 
-function handleGetSessions(
-    id: number,
-    port: PortObject,
-    devices?: Array<TrezorDeviceInfoDebug>,
-): Promise<void> {
+function handleGetSessions(id: number, port: PortObject, devices?: Array<TrezorDeviceInfoDebug>) {
     if (devices != null) {
         const connected: { [path: string]: boolean } = {};
         devices.forEach(d => {
@@ -192,7 +187,7 @@ function handleGetSessions(
             }
         });
     }
-    sendBack({ type: `sessions`, debugSessions, normalSessions }, id, port);
+    sendBack({ type: 'sessions', debugSessions, normalSessions }, id, port);
     return Promise.resolve();
 }
 
@@ -207,11 +202,11 @@ function handleAcquireFailed(id: number) {
 
 function handleAcquireIntent(
     path: string,
+    id: number,
+    port: PortObject,
     previous?: string,
     debug?: boolean,
-    id?: number,
-    port?: PortObject,
-): Promise<void> {
+) {
     let error = false;
     const thisTable = debug ? debugSessions : normalSessions;
     const otherTable = !debug ? debugSessions : normalSessions;
@@ -223,14 +218,13 @@ function handleAcquireIntent(
         error = previous !== realPrevious;
     }
     if (error) {
-        sendBack({ type: `wrong-previous-session` }, id, port);
+        sendBack({ type: 'wrong-previous-session' }, id, port);
         return Promise.resolve();
     }
     startLock();
-    sendBack({ type: `other-session`, otherSession: otherTable[path] }, id, port);
+    sendBack({ type: 'other-session', otherSession: otherTable[path] }, id, port);
     // if lock times out, promise rejects and queue goes on
-    // @ts-ignore
-    return waitForLock().then((obj: { good: boolean; id: number }) => {
+    return waitForLock().then(obj => {
         if (obj.good) {
             lastSession++;
             let session = lastSession.toString();
@@ -238,10 +232,10 @@ function handleAcquireIntent(
                 session = `debug${session}`;
             }
             thisTable[path] = session;
-            sendBack({ type: `session-number`, number: session }, obj.id, port);
+            sendBack({ type: 'session-number', number: session }, obj.id, port);
         } else {
             // failure => nothing happens, but still has to reply "ok"
-            sendBack({ type: `ok` }, obj.id, port);
+            sendBack({ type: 'ok' }, obj.id, port);
         }
     });
 }
@@ -253,7 +247,7 @@ function sendBack(message: MessageFromSharedWorker, id: number, port: PortObject
 // when shared worker is not loaded as a shared loader, use it as a module instead
 export function postModuleMessage(
     { id, message }: { id: number; message: MessageToSharedWorker },
-    fn: (message: Object) => void,
+    fn: PortObject['postMessage'],
 ) {
     handleMessage({ id, message }, { postMessage: fn });
 }

@@ -4,8 +4,8 @@ export type TrezorDeviceInfo = {
 };
 
 export type TrezorDeviceInfoWithSession = TrezorDeviceInfo & {
-    session?: string;
-    debugSession?: string;
+    session?: string | null;
+    debugSession?: string | null;
     debug: boolean;
 };
 

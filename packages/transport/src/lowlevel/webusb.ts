@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 /// <reference types="w3c-web-usb" />
 
 import { EventEmitter } from 'events';
@@ -30,7 +28,7 @@ export default class WebUsbPlugin {
     version = '';
     debug = false;
 
-    usb: USB;
+    usb?: USB;
 
     allowsWriteAndEnumerate = true;
 
@@ -47,7 +45,7 @@ export default class WebUsbPlugin {
     async init(debug?: boolean): Promise<void> {
         this.debug = !!debug;
         const { usb } = navigator;
-        if (usb == null) {
+        if (!usb) {
             throw new Error(`WebUSB is not available on this browser.`);
         } else {
             this.usb = usb;
@@ -72,7 +70,7 @@ export default class WebUsbPlugin {
 
     async _listDevices(): Promise<Array<{ path: string; device: USBDevice; debug: boolean }>> {
         let bootloaderId = 0;
-        const devices = await this.usb.getDevices();
+        const devices = await this.usb!.getDevices();
         const trezorDevices = devices.filter(dev => {
             const isTrezor = TREZOR_DESCS.some(
                 desc => dev.vendorId === desc.vendorId && dev.productId === desc.productId,
@@ -148,11 +146,16 @@ export default class WebUsbPlugin {
             }
 
             const res = await device.transferIn(endpoint, 64);
+
+            if (!res.data) {
+                throw new Error('no data');
+            }
             if (res.data.byteLength === 0) {
                 return this.receive(path, debug);
             }
             return res.data.buffer.slice(1);
         } catch (e) {
+            // @ts-ignore
             if (e.message === `Device unavailable.`) {
                 throw new Error(`Action was interrupted.`);
             } else {
@@ -207,7 +210,7 @@ export default class WebUsbPlugin {
 
     async requestDevice(): Promise<void> {
         // I am throwing away the resulting device, since it appears in enumeration anyway
-        await this.usb.requestDevice({ filters: TREZOR_DESCS });
+        await this.usb!.requestDevice({ filters: TREZOR_DESCS });
     }
 
     requestNeeded = true;

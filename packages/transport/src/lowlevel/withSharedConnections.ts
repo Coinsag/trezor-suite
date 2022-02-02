@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import { create as createDeferred, resolveTimeoutPromise } from '../utils/defered';
 import { parseConfigure } from './protobuf/messages';
 import { buildAndSend } from './send';
@@ -123,7 +121,7 @@ export default class LowlevelTransportWithSharedConnections {
     configured = false;
 
     _sharedWorkerFactory: undefined | (() => SharedWorker);
-    sharedWorker: undefined | SharedWorker;
+    sharedWorker: null | SharedWorker = null;
 
     stopped = false;
 
@@ -299,10 +297,8 @@ export default class LowlevelTransportWithSharedConnections {
         }
     }
 
-    async configure(signedData: JSON): Promise<void> {
-        // @ts-ignore
+    async configure(signedData: any) {
         const messages = parseConfigure(signedData);
-        // @ts-ignore
         this._messages = messages;
         this.configured = true;
     }
@@ -333,7 +329,7 @@ export default class LowlevelTransportWithSharedConnections {
         }
         const sessionsMM = debugLink ? sessionsM.debugSessions : sessionsM.normalSessions;
 
-        let path_: string = null;
+        let path_: string | null = null;
         Object.keys(sessionsMM).forEach(kpath => {
             if (sessionsMM[kpath] === session) {
                 path_ = kpath;
@@ -360,10 +356,8 @@ export default class LowlevelTransportWithSharedConnections {
         data: Object,
         debugLink: boolean,
     ): Promise<MessageFromTrezor> {
-        // @ts-ignore
         const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
             const messages = this.messages();
-            // @ts-ignore
             await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
             const message = await receiveAndParse(messages, this._receiveLowlevel(path, debugLink));
             return message;
@@ -375,20 +369,13 @@ export default class LowlevelTransportWithSharedConnections {
     async post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
         const callInside: (path: string) => Promise<void> = async (path: string) => {
             const messages = this.messages();
-            await buildAndSend(
-                // @ts-ignore
-                messages,
-                this._sendLowlevel(path, debugLink),
-                name,
-                data,
-            );
+            await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
         };
 
         return this.doWithSession(session, debugLink, callInside);
     }
 
     async read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
-        // @ts-ignore
         const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
             const messages = this.messages();
             const message = await receiveAndParse(messages, this._receiveLowlevel(path, debugLink));
@@ -435,7 +422,6 @@ export default class LowlevelTransportWithSharedConnections {
         if (this.sharedWorker != null) {
             this.sharedWorker.port.postMessage({ id, message });
         } else {
-            // @ts-ignore
             postModuleMessage({ id, message }, m => this.receiveFromWorker(m));
         }
 
@@ -446,9 +432,6 @@ export default class LowlevelTransportWithSharedConnections {
         this.defereds[m.id].resolve(m.message);
         delete this.defereds[m.id];
     }
-
-    setBridgeLatestUrl(url: string): void {}
-    setBridgeLatestVersion(version: string): void {}
 
     isOutdated = false;
 

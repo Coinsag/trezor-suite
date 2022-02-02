@@ -1,5 +1,3 @@
-// @ts-nocheck
-
 import type {
     Transport,
     AcquireInput,
@@ -8,27 +6,25 @@ import type {
 } from './types';
 
 export default class FallbackTransport {
-    name = `FallbackTransport`;
-    activeName = ``;
-
-    _availableTransports: Array<Transport>;
-    transports: Array<Transport>;
-    configured: boolean;
-    version: string;
+    name = 'FallbackTransport';
+    activeName = '';
+    _availableTransports: Array<Transport> = [];
+    transports: Array<Transport> = [];
+    configured = false;
+    version = '';
     debug = false;
-
-    // note: activeTransport is actually "?Transport", but
-    // everywhere I am using it is in `async`, so error gets returned as Promise.reject
+    // @ts-ignore
     activeTransport: Transport;
+    isOutdated = false;
 
     constructor(transports: Array<Transport>) {
         this.transports = transports;
     }
 
-    // first one that inits successfuly is the final one; others won't even start initing
+    // first one that inits successfully is the final one; others won't even start initiating
     async _tryInitTransports(): Promise<Array<Transport>> {
         const res: Array<Transport> = [];
-        let lastError: Error = null;
+        let lastError: any = null;
         for (const transport of this.transports) {
             try {
                 await transport.init(this.debug);
@@ -38,14 +34,14 @@ export default class FallbackTransport {
             }
         }
         if (res.length === 0) {
-            throw lastError || new Error(`No transport could be initialized.`);
+            throw lastError || new Error('No transport could be initialized.');
         }
         return res;
     }
 
     // first one that inits successfully is the final one; others won't even start initing
     async _tryConfigureTransports(data: JSON | string): Promise<Transport> {
-        let lastError: Error = null;
+        let lastError: any = null;
         for (const transport of this._availableTransports) {
             try {
                 await transport.configure(data);
@@ -54,7 +50,7 @@ export default class FallbackTransport {
                 lastError = e;
             }
         }
-        throw lastError || new Error(`No transport could be initialized.`);
+        throw lastError || new Error('No transport could be initialized.');
     }
 
     async init(debug?: boolean): Promise<void> {
@@ -70,7 +66,6 @@ export default class FallbackTransport {
         this.configured = false;
     }
 
-    isOutdated: boolean;
     async configure(signedData: JSON | string): Promise<void> {
         const pt: Promise<Transport> = this._tryConfigureTransports(signedData);
         this.activeTransport = await pt;
@@ -81,7 +76,7 @@ export default class FallbackTransport {
         this.isOutdated = this.activeTransport.isOutdated;
     }
 
-    // using async so I get Promise.recect on this.activeTransport == null (or other error), not Error
+    // using async so I get Promise.reject on this.activeTransport == null (or other error), not Error
     async enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
         return this.activeTransport.enumerate();
     }
