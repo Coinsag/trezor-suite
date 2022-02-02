@@ -7,6 +7,5 @@ module.exports = {
         'require-await': 'off',
         'no-restricted-syntax': 'off',
         'no-await-in-loop': 'off',
-        'func-names': 'off',
     },
 };

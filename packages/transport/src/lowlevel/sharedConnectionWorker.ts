@@ -19,10 +19,10 @@ interface LockResult {
 // @ts-expect-error
 if (typeof onconnect !== 'undefined') {
     // @ts-expect-error
-    onconnect = function (e) {
+    const onconnect = e => {
         const port = e.ports[0];
         // @ts-expect-error
-        port.onmessage = function (e) {
+        port.onmessage = e => {
             handleMessage(e.data, port);
         };
     };
