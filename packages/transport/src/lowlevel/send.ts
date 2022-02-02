@@ -41,7 +41,7 @@ export const buildBuffers = (messages: Root, name: string, data: Object) => {
 
 // Sends message to device.
 // Resolves if everything gets sent
-export async function buildAndSend(
+export function buildAndSend(
     messages: Root,
     sender: (data: Buffer) => Promise<void>,
     name: string,

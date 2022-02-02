@@ -197,9 +197,7 @@ export default class LowlevelTransportWithSharedConnections {
 
     _lastStringified = ``;
 
-    async listen(
-        old: Array<TrezorDeviceInfoWithSession>,
-    ): Promise<Array<TrezorDeviceInfoWithSession>> {
+    listen(old: Array<TrezorDeviceInfoWithSession>): Promise<Array<TrezorDeviceInfoWithSession>> {
         const oldStringified = stableStringify(old);
         const last = old == null ? this._lastStringified : oldStringified;
         return this._runIter(0, last);
@@ -297,7 +295,7 @@ export default class LowlevelTransportWithSharedConnections {
         }
     }
 
-    async configure(signedData: any) {
+    configure(signedData: any) {
         const messages = parseConfigure(signedData);
         this._messages = messages;
         this.configured = true;
@@ -350,7 +348,7 @@ export default class LowlevelTransportWithSharedConnections {
         return Promise.race([defered.rejectingPromise, resPromise]);
     }
 
-    async call(
+    call(
         session: string,
         name: string,
         data: Object,
@@ -366,7 +364,7 @@ export default class LowlevelTransportWithSharedConnections {
         return this.doWithSession(session, debugLink, callInside);
     }
 
-    async post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
+    post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
         const callInside: (path: string) => Promise<void> = async (path: string) => {
             const messages = this.messages();
             await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
@@ -375,7 +373,7 @@ export default class LowlevelTransportWithSharedConnections {
         return this.doWithSession(session, debugLink, callInside);
     }
 
-    async read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
+    read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
         const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
             const messages = this.messages();
             const message = await receiveAndParse(messages, this._receiveLowlevel(path, debugLink));
@@ -400,7 +398,7 @@ export default class LowlevelTransportWithSharedConnections {
         }
     }
 
-    async requestDevice(): Promise<void> {
+    requestDevice(): Promise<void> {
         return this.plugin.requestDevice();
     }
 

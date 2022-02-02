@@ -77,25 +77,23 @@ export default class FallbackTransport {
     }
 
     // using async so I get Promise.reject on this.activeTransport == null (or other error), not Error
-    async enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
+    enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
         return this.activeTransport.enumerate();
     }
 
-    async listen(
-        old?: Array<TrezorDeviceInfoWithSession>,
-    ): Promise<Array<TrezorDeviceInfoWithSession>> {
+    listen(old?: Array<TrezorDeviceInfoWithSession>): Promise<Array<TrezorDeviceInfoWithSession>> {
         return this.activeTransport.listen(old);
     }
 
-    async acquire(input: AcquireInput, debugLink: boolean): Promise<string> {
+    acquire(input: AcquireInput, debugLink: boolean): Promise<string> {
         return this.activeTransport.acquire(input, debugLink);
     }
 
-    async release(session: string, onclose: boolean, debugLink: boolean): Promise<void> {
+    release(session: string, onclose: boolean, debugLink: boolean): Promise<void> {
         return this.activeTransport.release(session, onclose, debugLink);
     }
 
-    async call(
+    call(
         session: string,
         name: string,
         data: Object,
@@ -104,15 +102,15 @@ export default class FallbackTransport {
         return this.activeTransport.call(session, name, data, debugLink);
     }
 
-    async post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
+    post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
         return this.activeTransport.post(session, name, data, debugLink);
     }
 
-    async read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
+    read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
         return this.activeTransport.read(session, debugLink);
     }
 
-    async requestDevice(): Promise<void> {
+    requestDevice(): Promise<void> {
         return this.activeTransport.requestDevice();
     }
 

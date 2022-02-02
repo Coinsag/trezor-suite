@@ -37,7 +37,7 @@ export default class BridgeTransport {
         this.newestVersionUrl = newestVersionUrl == null ? DEFAULT_VERSION_URL : newestVersionUrl;
     }
 
-    async _post(options: IncompleteRequestOptions) {
+    _post(options: IncompleteRequestOptions) {
         if (this.stopped) {
             // eslint-disable-next-line prefer-promise-reject-errors
             return Promise.reject(`Transport stopped.`);
@@ -74,7 +74,7 @@ export default class BridgeTransport {
         this.isOutdated = versionUtils.isNewer(newVersion, this.version);
     }
 
-    async configure(signedData: INamespace) {
+    configure(signedData: INamespace) {
         const messages = parseConfigure(signedData);
         this.configured = true;
         this._messages = messages;
@@ -100,7 +100,7 @@ export default class BridgeTransport {
         return devices;
     }
 
-    async _acquireMixed(input: AcquireInput, debugLink: boolean) {
+    _acquireMixed(input: AcquireInput, debugLink: boolean) {
         const previousStr = input.previous == null ? `null` : input.previous;
         const url = `${debugLink ? `/debug` : ``}/acquire/${input.path}/${previousStr}`;
         return this._post({ url });
