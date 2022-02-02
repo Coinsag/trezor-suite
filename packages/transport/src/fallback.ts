@@ -96,13 +96,18 @@ export default class FallbackTransport {
     call(
         session: string,
         name: string,
-        data: Object,
+        data: Record<string, unknown>,
         debugLink: boolean,
     ): Promise<MessageFromTrezor> {
         return this.activeTransport.call(session, name, data, debugLink);
     }
 
-    post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
+    post(
+        session: string,
+        name: string,
+        data: Record<string, unknown>,
+        debugLink: boolean,
+    ): Promise<void> {
         return this.activeTransport.post(session, name, data, debugLink);
     }
 

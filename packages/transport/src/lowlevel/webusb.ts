@@ -42,7 +42,7 @@ export default class WebUsbPlugin {
 
     unreadableHidDeviceChange: EventEmitter = new EventEmitter();
 
-    init(debug?: boolean): Promise<void> {
+    init(debug?: boolean) {
         this.debug = !!debug;
         const { usb } = navigator;
         if (!usb) {
@@ -112,7 +112,7 @@ export default class WebUsbPlugin {
         }));
     }
 
-    _findDevice(path: string): Promise<USBDevice> {
+    _findDevice(path: string) {
         const deviceO = this._lastDevices.find(d => d.path === path);
         if (deviceO == null) {
             throw new Error(`Action was interrupted.`);

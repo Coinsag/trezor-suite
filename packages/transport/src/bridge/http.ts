@@ -1,5 +1,5 @@
 export type HttpRequestOptions = {
-    body?: Array<any> | Object | string;
+    body?: Array<any> | Record<string, unknown> | string;
     url: string;
     method: 'POST' | 'GET';
     skipContentTypeHeader?: boolean;

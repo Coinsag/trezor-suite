@@ -18,7 +18,7 @@ async function sendBuffers(
 
 // Sends message to device.
 // Resolves if everything gets sent
-export function buildOne(messages: Root, name: string, data: Object) {
+export function buildOne(messages: Root, name: string, data: Record<string, unknown>) {
     const { Message, messageType } = createMessageFromName(messages, name);
 
     const buffer = encodeProtobuf(Message, data);
@@ -29,7 +29,7 @@ export function buildOne(messages: Root, name: string, data: Object) {
     });
 }
 
-export const buildBuffers = (messages: Root, name: string, data: Object) => {
+export const buildBuffers = (messages: Root, name: string, data: Record<string, unknown>) => {
     const { Message, messageType } = createMessageFromName(messages, name);
     const buffer = encodeProtobuf(Message, data);
     return encodeProtocol(buffer, {
@@ -45,7 +45,7 @@ export function buildAndSend(
     messages: Root,
     sender: (data: Buffer) => Promise<void>,
     name: string,
-    data: Object,
+    data: Record<string, unknown>,
 ): Promise<void> {
     const buffers = buildBuffers(messages, name, data);
     return sendBuffers(sender, buffers);

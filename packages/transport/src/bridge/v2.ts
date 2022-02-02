@@ -13,7 +13,7 @@ import type { INamespace } from 'protobufjs/light';
 import type { AcquireInput, TrezorDeviceInfoWithSession } from '../types';
 
 type IncompleteRequestOptions = {
-    body?: Array<any> | Object | string;
+    body?: Array<any> | Record<string, unknown> | string;
     url: string;
 };
 
@@ -121,7 +121,7 @@ export default class BridgeTransport {
         await res;
     }
 
-    async call(session: string, name: string, data: Object, debugLink: boolean) {
+    async call(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         if (this._messages == null) {
             throw new Error(`Transport not configured.`);
         }
@@ -139,7 +139,7 @@ export default class BridgeTransport {
         return check.call(jsonData);
     }
 
-    async post(session: string, name: string, data: Object, debugLink: boolean) {
+    async post(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         if (this._messages == null) {
             throw new Error(`Transport not configured.`);
         }

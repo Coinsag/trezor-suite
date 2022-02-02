@@ -351,7 +351,7 @@ export default class LowlevelTransportWithSharedConnections {
     call(
         session: string,
         name: string,
-        data: Object,
+        data: Record<string, unknown>,
         debugLink: boolean,
     ): Promise<MessageFromTrezor> {
         const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
@@ -364,7 +364,12 @@ export default class LowlevelTransportWithSharedConnections {
         return this.doWithSession(session, debugLink, callInside);
     }
 
-    post(session: string, name: string, data: Object, debugLink: boolean): Promise<void> {
+    post(
+        session: string,
+        name: string,
+        data: Record<string, unknown>,
+        debugLink: boolean,
+    ): Promise<void> {
         const callInside: (path: string) => Promise<void> = async (path: string) => {
             const messages = this.messages();
             await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
