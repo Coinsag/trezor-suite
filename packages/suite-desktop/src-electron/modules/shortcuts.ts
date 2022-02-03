@@ -1,7 +1,8 @@
 import { app } from 'electron';
 import electronLocalshortcut from 'electron-localshortcut';
+import { Module } from '../libs/modules';
 
-const init = ({ mainWindow, src }: Dependencies) => {
+const init: Module = ({ mainWindow, src }) => {
     const { logger } = global;
 
     // Register more shortcuts for opening dev tools
