@@ -255,6 +255,12 @@ const routes = [
         params: walletParams,
     },
     {
+        name: 'wallet-invity-kyc-failed',
+        pattern: '/accounts/invity/kyc-failed',
+        app: 'wallet',
+        params: walletParams,
+    },
+    {
         name: 'wallet-invity-aml',
         pattern: '/accounts/invity/aml',
         app: 'wallet',
