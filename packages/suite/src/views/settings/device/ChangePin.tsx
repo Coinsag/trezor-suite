@@ -1,21 +1,30 @@
 import React from 'react';
+
 import { Translation } from '@suite-components';
 import { ActionButton, ActionColumn, SectionItem, TextColumn } from '@suite-components/Settings';
 import { useAnalytics, useActions } from '@suite-hooks';
 import * as deviceSettingsActions from '@settings-actions/deviceSettingsActions';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
-interface Props {
+interface ChangePinProps {
     isDeviceLocked: boolean;
 }
 
-const ChangePin = ({ isDeviceLocked }: Props) => {
+export const ChangePin = ({ isDeviceLocked }: ChangePinProps) => {
+    const analytics = useAnalytics();
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.ChangePin);
+
     const { changePin } = useActions({
         changePin: deviceSettingsActions.changePin,
     });
-    const analytics = useAnalytics();
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/change-pin"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_DEVICE_SETTINGS_CHANGE_PIN_TITLE" />}
                 description={<Translation id="TR_DEVICE_SETTINGS_CHANGE_PIN_DESC" />}
@@ -37,4 +46,3 @@ const ChangePin = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default ChangePin;

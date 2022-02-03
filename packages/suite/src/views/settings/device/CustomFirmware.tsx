@@ -1,30 +1,38 @@
 import React from 'react';
+
 import { Translation } from '@suite-components';
 import { ActionButton, ActionColumn, SectionItem, TextColumn } from '@suite-components/Settings';
 import { WIKI_FW_DOWNGRADE } from '@suite-constants/urls';
 import { useActions } from '@suite-hooks';
 import * as routerActions from '@suite-actions/routerActions';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
-interface Props {
+interface CustomFirmwareProps {
     isDeviceLocked: boolean;
 }
 
-const CustomFirmware = ({ isDeviceLocked }: Props) => {
+export const CustomFirmware = ({ isDeviceLocked }: CustomFirmwareProps) => {
     const { goto } = useActions({
         goto: routerActions.goto,
     });
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.CustomFirmware);
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/custom-firmware"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_DEVICE_SETTINGS_CUSTOM_FIRMWARE_TITLE" />}
                 description={<Translation id="TR_DEVICE_SETTINGS_CUSTOM_FIRMWARE_DESCRIPTION" />}
-                learnMore={WIKI_FW_DOWNGRADE}
+                buttonLink={WIKI_FW_DOWNGRADE}
             />
             <ActionColumn>
                 <ActionButton
                     onClick={() => {
-                        goto('firmware-custom', { cancelable: true });
+                        goto('firmware-custom', { params: { cancelable: true } });
                     }}
                     variant="danger"
                     isDisabled={isDeviceLocked}
@@ -36,4 +44,3 @@ const CustomFirmware = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default CustomFirmware;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { Translation } from '@suite-components';
 import {
     ActionButton,
@@ -10,17 +11,20 @@ import {
 import { useDevice, useAnalytics, useActions } from '@suite-hooks';
 import * as deviceSettingsActions from '@settings-actions/deviceSettingsActions';
 import { MAX_LABEL_LENGTH } from '@suite-constants/device';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
-interface Props {
+interface DeviceLabelProps {
     isDeviceLocked: boolean;
 }
 
-const DeviceLabel = ({ isDeviceLocked }: Props) => {
+export const DeviceLabel = ({ isDeviceLocked }: DeviceLabelProps) => {
     const { device } = useDevice();
     const { applySettings } = useActions({
         applySettings: deviceSettingsActions.applySettings,
     });
     const analytics = useAnalytics();
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.DeviceLabel);
 
     const [label, setLabel] = useState('');
     useEffect(() => {
@@ -30,7 +34,11 @@ const DeviceLabel = ({ isDeviceLocked }: Props) => {
     }, [device]);
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/device-label"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_DEVICE_SETTINGS_DEVICE_LABEL" />}
                 description={
@@ -70,4 +78,3 @@ const DeviceLabel = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default DeviceLabel;

@@ -12,7 +12,6 @@ import type {
     TrezorDevice,
     ButtonRequest,
     AppState,
-    SuiteThemeColors,
 } from '@suite-types';
 import type { DebugModeOptions, AutodetectSettings } from '@suite-reducers/suiteReducer';
 
@@ -45,7 +44,6 @@ export type SuiteAction =
     | {
           type: typeof SUITE.SET_LANGUAGE;
           locale: Locale;
-          messages: { [key: string]: string };
       }
     | { type: typeof SUITE.SET_DEBUG_MODE; payload: Partial<DebugModeOptions> }
     | { type: typeof SUITE.ONLINE_STATUS; payload: boolean }
@@ -73,11 +71,13 @@ export type SuiteAction =
     | {
           type: typeof SUITE.SET_THEME;
           variant: SuiteThemeVariant;
-          colors: SuiteThemeColors;
       }
     | {
           type: typeof SUITE.SET_AUTODETECT;
           payload: Partial<AutodetectSettings>;
+      }
+    | {
+          type: typeof SUITE.REQUEST_DEVICE_RECONNECT;
       };
 
 export const removeButtonRequests = (device: TrezorDevice | undefined) => ({
@@ -96,10 +96,9 @@ export const setDbError = (payload: AppState['suite']['dbError']) => ({
     payload,
 });
 
-export const setTheme = (variant: SuiteThemeVariant, colors?: SuiteThemeColors) => ({
+export const setTheme = (variant: SuiteThemeVariant) => ({
     type: SUITE.SET_THEME,
     variant,
-    colors,
 });
 
 export const setAutodetect = (payload: Partial<AutodetectSettings>) => ({
@@ -587,3 +586,7 @@ export const switchDuplicatedDevice =
         // remove stateless instance
         dispatch(forgetDevice(device));
     };
+
+export const requestDeviceReconnect = () => ({
+    type: SUITE.REQUEST_DEVICE_RECONNECT,
+});

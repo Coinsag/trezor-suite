@@ -35,12 +35,10 @@ import BackgroundGallery from './BackgroundGallery';
 import TransactionDetail from './TransactionDetail';
 import Log from './Log';
 import WipeDevice from './WipeDevice';
-import DisconnectDevice from './DisconnectDevice';
 import MetadataProvider from './metadata/MetadataProvider';
 import AdvancedCoinSettings from './AdvancedCoinSettings';
 import AddToken from './AddToken';
 import SafetyChecks from './SafetyChecks';
-import SendAoppMessage from './SendAoppMessage';
 import { useGuide } from '@guide-hooks';
 
 import type { AcquiredDevice } from '@suite-types';
@@ -230,8 +228,6 @@ const getUserContextModal = ({ modal, onCancel }: SharedProps) => {
             return <ImportTransaction {...payload} onCancel={onCancel} />;
         case 'pin-mismatch':
             return <PinMismatch />;
-        case 'disconnect-device':
-            return <DisconnectDevice />;
         case 'log':
             return <Log onCancel={onCancel} />;
         case 'metadata-provider':
@@ -242,8 +238,6 @@ const getUserContextModal = ({ modal, onCancel }: SharedProps) => {
             return <AddToken {...payload} onCancel={onCancel} />;
         case 'safety-checks':
             return <SafetyChecks onCancel={onCancel} />;
-        case 'send-aopp-message':
-            return <SendAoppMessage {...payload} onCancel={onCancel} />;
         default:
             return null;
     }

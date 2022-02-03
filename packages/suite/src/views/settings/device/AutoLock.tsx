@@ -1,9 +1,12 @@
 import React from 'react';
+
 import { Translation } from '@suite-components';
 import { ActionColumn, ActionSelect, SectionItem, TextColumn } from '@suite-components/Settings';
 import { useAnalytics, useActions, useDevice, useLocales } from '@suite-hooks';
 import * as deviceSettingsActions from '@settings-actions/deviceSettingsActions';
 import { formatDurationStrict } from '@suite-utils/date';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
 // auto lock times in seconds; allowed lock times by device: <1 minute, 6 days>
 const AUTO_LOCK_TIMES = {
@@ -19,14 +22,16 @@ const buildAutoLockOption = (seconds: number, locale?: Locale) => ({
     value: seconds,
 });
 
-interface Props {
+interface AutoLockProps {
     isDeviceLocked: boolean;
 }
 
-const AutoLock = ({ isDeviceLocked }: Props) => {
+export const AutoLock = ({ isDeviceLocked }: AutoLockProps) => {
     const { applySettings } = useActions({
         applySettings: deviceSettingsActions.applySettings,
     });
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.Autolock);
+
     const { device } = useDevice();
     const analytics = useAnalytics();
     const locale = useLocales();
@@ -43,7 +48,11 @@ const AutoLock = ({ isDeviceLocked }: Props) => {
     };
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/autolock"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_DEVICE_SETTINGS_AUTO_LOCK" />}
                 description={<Translation id="TR_DEVICE_SETTINGS_AUTO_LOCK_SUBHEADING" />}
@@ -78,4 +87,3 @@ const AutoLock = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default AutoLock;

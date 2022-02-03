@@ -57,18 +57,19 @@ suite-desktop deploy dev:
   tags:
     - deploy
 
-# Suite native deploy to dev
-suite-native deploy dev:
-  stage: deploy to dev
-  only:
-    <<: *run_everything_rules
-  variables:
-    DEPLOY_DIRECTORY: ${DEPLOY_BASE_DIR}/suite-native/${CI_BUILD_REF_NAME}
-  script:
-    - mkdir -p ${DEPLOY_DIRECTORY}
-    - rsync --delete -va app-release.apk "${DEPLOY_DIRECTORY}/"
-  tags:
-    - deploy
+# # Suite native deploy to dev
+# suite-native deploy dev:
+#   stage: deploy to dev
+#   only:
+#     <<: *run_everything_rules
+#   variables:
+#     DEPLOY_DIRECTORY: ${DEPLOY_BASE_DIR}/suite-native/${CI_BUILD_REF_NAME}
+#   script:
+#     - mkdir -p ${DEPLOY_DIRECTORY}
+#     - rsync --delete -va app-release.apk "${DEPLOY_DIRECTORY}/"
+#   tags:
+#     - deploy
+# TODO: Disabled until the new suite native build is introduced. Fix this deploy job after.
 
 # Messaging system deploy to dev
 msg-system deploy dev:
@@ -84,6 +85,22 @@ msg-system deploy dev:
     - source ${MSG_SYSTEM_DATA_DEPLOY_KEYFILE}
     - aws s3 cp packages/suite-data/files/message-system/config.v1.jws s3://data.trezor.io/config/develop/config.v1.jws
     - aws cloudfront create-invalidation --distribution-id ${AWS_CLOUDFRONT_ID} --paths '/config/develop/*'
+
+connect-explorer deploy dev:
+  stage: deploy to dev
+  variables:
+    DEPLOY_DIRECTORY: ${DEPLOY_BASE_DIR}/connect-explorer/${CI_BUILD_REF_NAME}
+  needs:
+    - connect-explorer build
+  environment:
+    name: ${CI_BUILD_REF_NAME}
+    url: $BASE_REVIEW_URL/${CI_BUILD_REF_NAME}
+  before_script: []
+  script:
+    - mkdir -p ${DEPLOY_DIRECTORY}/connect-explorer
+    - rsync --delete -va packages/connect-explorer/build/ "${DEPLOY_DIRECTORY}/"
+  tags:
+    - deploy
 
 # npm packages deploy to npm registry
 .npm_deploy_rules: &npm_deploy_rules

@@ -3,16 +3,15 @@ import { TRANSPORT, TransportInfo } from 'trezor-connect';
 import { variables } from '@trezor/components';
 import { SUITE, STORAGE } from '@suite-actions/constants';
 import { DISCOVERY } from '@wallet-actions/constants';
-import { Action, TrezorDevice, Lock, SuiteThemeColors } from '@suite-types';
+import { Action, TrezorDevice, Lock } from '@suite-types';
 import type { Locale } from '@suite-config/languages';
 import { isWeb, getWindowWidth } from '@suite-utils/env';
 import { ensureLocale } from '@suite-utils/l10n';
-import { getNumberFromPxString } from '@suite-utils/string';
+import { getNumberFromPixelString } from '@trezor/utils';
 
 export interface DebugModeOptions {
     invityAPIUrl?: string;
     showDebugMenu: boolean;
-    bridgeDevMode: boolean;
 }
 
 export interface AutodetectSettings {
@@ -37,7 +36,6 @@ interface Flags {
 interface SuiteSettings {
     theme: {
         variant: SuiteThemeVariant;
-        colors?: SuiteThemeColors;
     };
     language: Locale;
     torOnionLinks: boolean;
@@ -55,7 +53,6 @@ export interface SuiteState {
     dbError?: 'blocking' | 'blocked' | undefined; // blocked if the instance cannot upgrade due to older version running, blocking in case instance is running older version thus blocking other instance
     transport?: Partial<TransportInfo>;
     device?: TrezorDevice;
-    messages: { [key: string]: any };
     locks: Lock[];
     flags: Flags;
     settings: SuiteSettings;
@@ -67,7 +64,6 @@ const initialState: SuiteState = {
     loading: false,
     storageLoaded: false,
     loaded: false,
-    messages: {},
     locks: [],
     flags: {
         initialRun: true,
@@ -79,7 +75,8 @@ const initialState: SuiteState = {
         taprootBannerClosed: false,
         securityStepsHidden: false,
         dashboardGraphHidden: false,
-        dashboardAssetsGridMode: getWindowWidth() < getNumberFromPxString(variables.SCREEN_SIZE.SM),
+        dashboardAssetsGridMode:
+            getWindowWidth() < getNumberFromPixelString(variables.SCREEN_SIZE.SM),
     },
     settings: {
         theme: {
@@ -90,7 +87,6 @@ const initialState: SuiteState = {
         debug: {
             invityAPIUrl: undefined,
             showDebugMenu: false,
-            bridgeDevMode: false,
         },
         autodetect: {
             language: true,
@@ -149,7 +145,6 @@ const suiteReducer = (state: SuiteState = initialState, action: Action): SuiteSt
 
             case SUITE.SET_LANGUAGE:
                 draft.settings.language = action.locale;
-                draft.messages = action.messages;
                 break;
 
             case SUITE.SET_DEBUG_MODE:
@@ -162,7 +157,6 @@ const suiteReducer = (state: SuiteState = initialState, action: Action): SuiteSt
 
             case SUITE.SET_THEME:
                 draft.settings.theme.variant = action.variant;
-                draft.settings.theme.colors = action.colors;
                 break;
 
             case SUITE.SET_AUTODETECT:
@@ -213,6 +207,12 @@ const suiteReducer = (state: SuiteState = initialState, action: Action): SuiteSt
             case DISCOVERY.STOP:
             case DISCOVERY.COMPLETE:
                 changeLock(draft, SUITE.LOCK_TYPE.DEVICE, false);
+                break;
+
+            case SUITE.REQUEST_DEVICE_RECONNECT:
+                if (draft.device) {
+                    draft.device.reconnectRequested = true;
+                }
                 break;
 
             // no default

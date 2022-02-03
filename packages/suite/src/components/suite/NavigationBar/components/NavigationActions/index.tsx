@@ -8,12 +8,12 @@ import { findRouteByName } from '@suite-utils/router';
 import { useActions, useAnalytics, useSelector } from '@suite-hooks';
 import ActionItem from './components/ActionItem';
 import { isDesktop } from '@suite-utils/env';
-import NotificationsDropdown from './components/NotificationsDropdown';
-import SettingsDropdown from './components/SettingsDropdown';
-import TorDropdown from './components/TorDropdown';
-import EarlyAccessDropdown from './components/EarlyAccessDropdown';
+import { NavTor } from './components/NavTor';
+import { NavEarlyAccess } from './components/NavEarlyAccess';
+import { NavNotifications } from './components/NavNotifications';
+import { NavSettings } from './components/NavSettings';
 import { variables } from '@trezor/components';
-import BackendsDropdown from './components/BackendsDropdown';
+import { NavBackends } from './components/NavBackends';
 import type { Route } from '@suite-types';
 
 const Wrapper = styled.div`
@@ -118,7 +118,7 @@ const NavigationActions = (props: Props) => {
                     isMobileLayout={props.isMobileLayout}
                 />
             ) : (
-                <BackendsDropdown marginLeft />
+                <NavBackends />
             )}
 
             {isDesktop() && (
@@ -143,7 +143,7 @@ const NavigationActions = (props: Props) => {
                             />
                         </ActionItemWrapper>
                     ) : (
-                        <TorDropdown isActive={tor} marginLeft />
+                        <NavTor isActive={tor} />
                     )}
                 </>
             )}
@@ -160,7 +160,7 @@ const NavigationActions = (props: Props) => {
                         isMobileLayout={props.isMobileLayout}
                     />
                 ) : (
-                    <EarlyAccessDropdown isActive marginLeft />
+                    <NavEarlyAccess isActive />
                 ))}
 
             {!props.isMobileLayout && <Separator />}
@@ -176,7 +176,7 @@ const NavigationActions = (props: Props) => {
                     isMobileLayout={props.isMobileLayout}
                 />
             ) : (
-                <NotificationsDropdown
+                <NavNotifications
                     indicator={unseenNotifications}
                     isActive={getIfRouteIsActive('notifications-index')}
                 />
@@ -192,7 +192,7 @@ const NavigationActions = (props: Props) => {
                     isMobileLayout={props.isMobileLayout}
                 />
             ) : (
-                <SettingsDropdown isActive={getIfRouteIsActive('settings-index')} marginLeft />
+                <NavSettings isActive={getIfRouteIsActive('settings-index')} />
             )}
         </WrapperComponent>
     );

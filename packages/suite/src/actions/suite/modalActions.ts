@@ -1,8 +1,8 @@
 import TrezorConnect, { UI } from 'trezor-connect';
+import { createDeferred, Deferred, DeferredResponse } from '@trezor/utils';
 import { MODAL, SUITE } from '@suite-actions/constants';
 import { Route, Dispatch, GetState, TrezorDevice } from '@suite-types';
 import { Account, WalletAccountTransaction } from '@wallet-types';
-import { createDeferred, Deferred, DeferredResponse } from '@suite-utils/deferred';
 
 export type UserContextPayload =
     | {
@@ -114,13 +114,6 @@ export type UserContextPayload =
       }
     | {
           type: 'safety-checks';
-      }
-    | {
-          type: 'send-aopp-message';
-          address: string;
-          signature: string;
-          callback: string;
-          decision: Deferred<boolean>;
       };
 
 export type ModalAction =
@@ -207,8 +200,7 @@ type DeferredModals = Extract<
             | 'coinmarket-buy-terms'
             | 'coinmarket-sell-terms'
             | 'coinmarket-exchange-dex-terms'
-            | 'coinmarket-exchange-terms'
-            | 'send-aopp-message';
+            | 'coinmarket-exchange-terms';
     }
 >;
 // extract single modal by `type` util

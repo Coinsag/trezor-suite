@@ -53,3 +53,4 @@ export const CARDANO_STAKE_POOL_MAINNET =
     'https://trezor-cardano-mainnet.blockfrost.io/api/v0/pools/';
 export const CARDANO_STAKE_POOL_TESTNET =
     'https://trezor-cardano-testnet.blockfrost.io/api/v0/pools/';
+export const HOMESCREEN_EDITOR = 'https://trezor.github.io/homescreen-editor/';

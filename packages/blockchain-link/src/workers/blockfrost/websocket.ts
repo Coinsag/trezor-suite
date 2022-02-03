@@ -1,7 +1,8 @@
 import * as WebSocket from 'ws';
 import { EventEmitter } from 'events';
+import { createDeferred, Deferred } from '@trezor/utils/lib/createDeferred';
+
 import { CustomError } from '../../constants/errors';
-import { create as createDeferred, Deferred } from '../../utils/deferred';
 import type { Send, BlockContent, BlockfrostTransaction } from '../../types/blockfrost';
 import type {
     AccountInfoParams,
@@ -22,6 +23,7 @@ interface Options {
     timeout?: number;
     pingTimeout?: number;
     keepAlive?: boolean;
+    agent?: WebSocket.ClientOptions['agent'];
 }
 
 const DEFAULT_TIMEOUT = 20 * 1000;
@@ -167,7 +169,10 @@ export class BlockfrostAPI extends EventEmitter {
         const { url } = this.options;
         this.setConnectionTimeout();
         const dfd = createDeferred<void>(-1);
-        const ws = new WebSocket(url);
+        // options are not used in web builds (see ./src/utils/ws)
+        const ws = new WebSocket(url, {
+            agent: this.options.agent,
+        });
         if (typeof ws.setMaxListeners === 'function') {
             ws.setMaxListeners(Infinity);
         }

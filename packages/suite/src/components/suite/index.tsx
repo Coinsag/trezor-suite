@@ -1,6 +1,5 @@
 import Backdrop from './Backdrop';
 import DeviceIcon from './images/DeviceIcon';
-import ConnectDeviceImage from './images/ConnectDeviceImage';
 import Image, { Props as ImageProps } from './images/Image';
 import CheckItem from './CheckItem';
 import PrerequisitesGuide from './PrerequisitesGuide';
@@ -51,7 +50,6 @@ import Coin from './Coin';
 import CoinsGroup from './CoinsGroup';
 import CoinsList from './CoinsGroup/CoinsList';
 import CharacterCount from './CharacterCount';
-import SettingsDropdown from './NavigationBar/components/NavigationActions/components/SettingsDropdown';
 import CloseButton from './CloseButton';
 import TooltipSymbol from './TooltipSymbol';
 import StatusLight from './StatusLight';
@@ -84,7 +82,6 @@ export {
     WalletLabeling,
     MetadataLabeling,
     Image,
-    ConnectDeviceImage,
     QuestionTooltip,
     TransactionsGraph,
     AppNavigationPanel,
@@ -114,7 +111,6 @@ export {
     CoinsGroup,
     CoinsList,
     CharacterCount,
-    SettingsDropdown,
     CloseButton,
     TooltipSymbol,
     StatusLight,

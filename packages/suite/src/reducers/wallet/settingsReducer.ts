@@ -12,7 +12,6 @@ export type BackendSettings = {
     coin: Network['symbol'];
     type: BackendType;
     urls: string[];
-    tor?: boolean; // Added by TOR
 };
 
 type Backends = {
@@ -69,14 +68,13 @@ const settingsReducer = (state: State = initialState, action: Action): State =>
                 break;
 
             case WALLET_SETTINGS.SET_BACKEND: {
-                const { coin, type, urls, tor } = action.payload;
+                const { coin, type, urls } = action.payload;
                 if (!urls.length) {
                     delete draft.backends[coin];
                 } else {
                     draft.backends[coin] = {
                         type,
                         urls,
-                        tor,
                     };
                 }
                 break;

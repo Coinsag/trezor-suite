@@ -1,6 +1,6 @@
 {
     "name": "@trezor/suite",
-    "suiteVersion": "22.1.0",
+    "suiteVersion": "22.3.0",
     "version": "1.0.0",
     "private": true,
     "scripts": {
@@ -27,6 +27,7 @@
         "@trezor/components": "1.0.0",
         "@trezor/suite-data": "1.0.0",
         "@trezor/suite-storage": "1.0.0",
+        "@trezor/utils": "*",
         "bignumber.js": "^9.0.2",
         "date-fns": "^2.27.0",
         "dropbox": "^10.23.0",
@@ -61,7 +62,7 @@
         "semver": "^7.3.5",
         "styled-components": "^5.3.3",
         "trezor-address-validator": "^0.4.2",
-        "trezor-connect": "8.2.7-beta.2",
+        "trezor-connect": "8.2.7-beta.3",
         "ua-parser-js": "^1.0.2",
         "uuid": "^8.3.2",
         "web3-utils": "^1.6.1",

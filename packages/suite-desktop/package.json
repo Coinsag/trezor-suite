@@ -44,19 +44,40 @@
             "!build/static/bin/**/*",
             "dist/**/*.js",
             "!dist/__**",
-            "package.json"
+            "package.json",
+            "!**/node_modules/@trezor/**/src",
+            "!**/node_modules/@trezor/**/coverage",
+            "!**/node_modules/@trezor/**/build",
+            "!**/node_modules/@trezor/**/scripts",
+            "!**/node_modules/@trezor/**/webpack",
+            "!**/node_modules/@trezor/**/integration",
+            "!**/node_modules/@trezor/**/*.bin",
+            "!**/node_modules/**/*.js.flow",
+            "!**/node_modules/**/*.ts",
+            "!**/node_modules/**/.*",
+            "!**/jest*",
+            "!**/babel*",
+            "!**/bower*",
+            "!**/tsconfig*",
+            "!**/*.log",
+            "!**/LICENSE",
+            "!**/docs",
+            "!**/*.md"
         ],
         "extraResources": [
             {
                 "from": "build/static/images/icons/512x512.png",
                 "to": "images/icons/512x512.png"
+            },
+            {
+                "from": "build/static/bin/firmware",
+                "to": "bin/firmware"
             }
         ],
         "protocols": {
             "name": "Trezor Suite",
             "schemes": [
-                "bitcoin",
-                "aopp"
+                "bitcoin"
             ]
         },
         "publish": {
@@ -125,7 +146,8 @@
             "artifactName": "Trezor-Suite-${version}-win-${arch}.${ext}",
             "target": [
                 "nsis"
-            ]
+            ],
+            "signDlls": true
         },
         "linux": {
             "extraResources": [
@@ -153,6 +175,7 @@
         "afterSign": "scripts/notarize.js"
     },
     "dependencies": {
+        "@trezor/utils": "*",
         "chalk": "^4.1.2",
         "electron-localshortcut": "^3.2.1",
         "electron-store": "^8.0.1",
@@ -160,9 +183,7 @@
         "node-fetch": "^2.6.1",
         "openpgp": "^5.0.0",
         "systeminformation": "^5.9.9",
-        "react": "17.0.2",
-        "react-dom": "17.0.2",
-        "styled-components": "^5.3.3"
+        "trezor-connect": "8.2.7-beta.3"
     },
     "devDependencies": {
         "@types/electron-localshortcut": "^3.1.0",

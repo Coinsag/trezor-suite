@@ -32,7 +32,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-index',
             callback: () => {
-                goto('wallet-index', undefined, true);
+                goto('wallet-index', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_TRANSACTIONS" />,
             position: 'primary',
@@ -41,7 +41,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-details',
             callback: () => {
-                goto('wallet-details', undefined, true);
+                goto('wallet-details', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_DETAILS" />,
             position: 'primary',
@@ -50,7 +50,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-tokens',
             callback: () => {
-                goto('wallet-tokens', undefined, true);
+                goto('wallet-tokens', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_TOKENS" />,
             position: 'primary',
@@ -59,7 +59,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-staking',
             callback: () => {
-                goto('wallet-staking', undefined, true);
+                goto('wallet-staking', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_STAKING" />,
             position: 'primary',
@@ -69,7 +69,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-send',
             callback: () => {
-                goto('wallet-send', undefined, true);
+                goto('wallet-send', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_SEND" />,
             position: 'secondary',
@@ -78,7 +78,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-receive',
             callback: () => {
-                goto('wallet-receive', undefined, true);
+                goto('wallet-receive', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_RECEIVE" />,
             position: 'secondary',
@@ -87,7 +87,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-coinmarket-buy',
             callback: () => {
-                goto('wallet-coinmarket-buy', undefined, true);
+                goto('wallet-coinmarket-buy', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_TRADE" />,
             position: 'secondary',
@@ -106,7 +106,7 @@ const AccountNavigation = (props: Props) => {
         {
             id: 'wallet-sign-verify',
             callback: () => {
-                goto('wallet-sign-verify', undefined, true);
+                goto('wallet-sign-verify', { preserveParams: true });
             },
             title: <Translation id="TR_NAV_SIGN_AND_VERIFY" />,
             icon: 'SIGN',

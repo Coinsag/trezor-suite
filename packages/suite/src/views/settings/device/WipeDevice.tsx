@@ -3,19 +3,26 @@ import { Translation } from '@suite-components';
 import { ActionButton, ActionColumn, SectionItem, TextColumn } from '@suite-components/Settings';
 import { useAnalytics, useActions } from '@suite-hooks';
 import * as modalActions from '@suite-actions/modalActions';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
-interface Props {
+interface WipeDeviceProps {
     isDeviceLocked: boolean;
 }
 
-const WipeDevice = ({ isDeviceLocked }: Props) => {
+export const WipeDevice = ({ isDeviceLocked }: WipeDeviceProps) => {
     const { openModal } = useActions({
         openModal: modalActions.openModal,
     });
     const analytics = useAnalytics();
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.WipeDevice);
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/wipe-device"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_DEVICE_SETTINGS_BUTTON_WIPE_DEVICE" />}
                 description={<Translation id="TR_WIPING_YOUR_DEVICE" />}
@@ -40,4 +47,3 @@ const WipeDevice = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default WipeDevice;

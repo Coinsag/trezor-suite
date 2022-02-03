@@ -9,6 +9,7 @@ import * as walletSettingsActions from '@settings-actions/walletSettingsActions'
 import * as suiteActions from '@suite-actions/suiteActions';
 import * as deviceSettingsActions from '@settings-actions/deviceSettingsActions';
 import * as routerActions from '@suite-actions/routerActions';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
 const Content = styled.div`
     display: grid;
@@ -93,7 +94,7 @@ const SecurityFeatures = () => {
                   label: <Translation id="TR_CHECK_SEED_IN_SETTINGS" />,
                   dataTest: 'seed-link',
                   action: () => {
-                      goto('settings-device');
+                      goto('settings-device', { anchor: SettingsAnchor.CheckRecoverySeed });
                       analytics.report({
                           type: 'dashboard/security-card/seed-link',
                       });
@@ -127,7 +128,7 @@ const SecurityFeatures = () => {
                   label: <Translation id="TR_CHANGE_PIN_IN_SETTINGS" />,
                   dataTest: 'pin-link',
                   action: () => {
-                      goto('settings-device');
+                      goto('settings-device', { anchor: SettingsAnchor.ChangePin });
                       analytics.report({
                           type: 'dashboard/security-card/change-pin',
                       });

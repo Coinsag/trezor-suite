@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+
 import { Translation, TrezorLink } from '@suite-components';
 import { ActionButton, ActionColumn, SectionItem, TextColumn } from '@suite-components/Settings';
 import { FIRMWARE_COMMIT_URL } from '@suite-constants/urls';
@@ -8,6 +9,8 @@ import * as routerActions from '@suite-actions/routerActions';
 import { getFwVersion, isBitcoinOnly, getFwUpdateVersion } from '@suite-utils/device';
 import { Button, Tooltip } from '@trezor/components';
 import { AcquiredDevice } from '@suite-types';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
 const Version = styled.div`
     span {
@@ -24,10 +27,6 @@ const VersionTooltip = styled(Tooltip)`
     display: inline-flex;
     margin: 0 4px;
 `;
-
-interface Props {
-    isDeviceLocked: boolean;
-}
 
 const getButtonLabelId = ({
     availableFwVersion,
@@ -53,12 +52,17 @@ const getButtonLabelId = ({
     }
 };
 
-const FirmwareVersion = ({ isDeviceLocked }: Props) => {
+interface FirmwareVersionProps {
+    isDeviceLocked: boolean;
+}
+
+export const FirmwareVersion = ({ isDeviceLocked }: FirmwareVersionProps) => {
     const { device } = useDevice();
     const { goto } = useActions({
         goto: routerActions.goto,
     });
     const analytics = useAnalytics();
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.FirmwareVersion);
 
     if (!device?.features) {
         return null;
@@ -69,7 +73,11 @@ const FirmwareVersion = ({ isDeviceLocked }: Props) => {
     const { revision } = device.features;
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/firmware-version"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn
                 title={<Translation id="TR_FIRMWARE_VERSION" />}
                 description={
@@ -108,7 +116,7 @@ const FirmwareVersion = ({ isDeviceLocked }: Props) => {
                 <ActionButton
                     variant="secondary"
                     onClick={() => {
-                        goto('firmware-index', { cancelable: true });
+                        goto('firmware-index', { params: { cancelable: true } });
                         analytics.report({
                             type: 'settings/device/goto/firmware',
                         });
@@ -124,4 +132,3 @@ const FirmwareVersion = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default FirmwareVersion;

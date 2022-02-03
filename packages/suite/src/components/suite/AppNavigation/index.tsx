@@ -18,6 +18,7 @@ import { MAX_WIDTH, MAX_WIDTH_WALLET_CONTENT } from '@suite-constants/layout';
 const { FONT_WEIGHT, FONT_SIZE } = variables;
 
 const SECONDARY_MENU_BUTTON_MARGIN = '12px';
+export const SECONDARY_PANEL_HEIGHT = '71px';
 
 const Wrapper = styled.div<{ subRoute: boolean | undefined; inView?: boolean }>`
     width: 100%;
@@ -42,7 +43,7 @@ const Wrapper = styled.div<{ subRoute: boolean | undefined; inView?: boolean }>`
         props.subRoute &&
         props.inView &&
         css`
-            transform: translate(0, -71px);
+            transform: translate(0, -${SECONDARY_PANEL_HEIGHT});
         `}
     ${props =>
         props.subRoute &&
@@ -135,7 +136,7 @@ const StyledNavLink = styled.div<{ active?: boolean }>`
 
 const InnerWrap = styled.div`
     width: 100%;
-    height: 71px;
+    height: ${SECONDARY_PANEL_HEIGHT};
     display: flex;
     justify-content: center;
     align-content: center;
@@ -207,13 +208,11 @@ interface MenuWidths {
 const isRouteActive = (routeName?: Route['name'], id?: string): boolean => routeName === id;
 
 const isSubsection = (routeName: Route['name']): boolean =>
-    !(
-        routeName.startsWith('settings') ||
-        routeName === 'wallet-index' ||
-        routeName === 'wallet-details' ||
-        routeName === 'wallet-tokens' ||
-        routeName === 'wallet-staking'
-    );
+    routeName.startsWith('wallet') &&
+    routeName !== 'wallet-index' &&
+    routeName !== 'wallet-details' &&
+    routeName !== 'wallet-tokens' &&
+    routeName !== 'wallet-staking';
 
 const isSecondaryMenuOverflown = ({ primary, secondary, wrapper }: MenuWidths) =>
     primary + secondary >= wrapper;

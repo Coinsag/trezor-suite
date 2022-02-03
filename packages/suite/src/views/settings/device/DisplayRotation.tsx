@@ -1,10 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
+
 import { Translation } from '@suite-components';
 import { ActionButton, ActionColumn, SectionItem, TextColumn } from '@suite-components/Settings';
 import { variables } from '@trezor/components';
 import { useAnalytics, useActions } from '@suite-hooks';
 import * as deviceSettingsActions from '@settings-actions/deviceSettingsActions';
+import { useAnchor } from '@suite-hooks/useAnchor';
+import { SettingsAnchor } from '@suite-constants/anchors';
 
 const DISPLAY_ROTATIONS = [
     { label: <Translation id="TR_NORTH" />, value: 0 },
@@ -24,18 +27,23 @@ const RotationButton = styled(ActionButton)`
     }
 `;
 
-interface Props {
+interface DisplayRotationProps {
     isDeviceLocked: boolean;
 }
 
-const DisplayRotation = ({ isDeviceLocked }: Props) => {
+export const DisplayRotation = ({ isDeviceLocked }: DisplayRotationProps) => {
     const { applySettings } = useActions({
         applySettings: deviceSettingsActions.applySettings,
     });
     const analytics = useAnalytics();
+    const { anchorRef, shouldHighlight } = useAnchor(SettingsAnchor.DisplayRotation);
 
     return (
-        <SectionItem>
+        <SectionItem
+            data-test="@settings/device/display-rotation"
+            ref={anchorRef}
+            shouldHighlight={shouldHighlight}
+        >
             <TextColumn title={<Translation id="TR_DEVICE_SETTINGS_DISPLAY_ROTATION" />} />
             <ActionColumn>
                 {DISPLAY_ROTATIONS.map(variant => (
@@ -63,4 +71,3 @@ const DisplayRotation = ({ isDeviceLocked }: Props) => {
         </SectionItem>
     );
 };
-export default DisplayRotation;

@@ -6,7 +6,7 @@ import styled, { css } from 'styled-components';
 import { Button, useTheme, variables, Input, Tooltip, Checkbox, Icon } from '@trezor/components';
 import { Translation } from '@suite-components/Translation';
 import { MAX_LENGTH } from '@suite-constants/inputs';
-import { countBytesInString } from '@suite-utils/string';
+import { countBytesInString } from '@trezor/utils';
 import { OpenGuideFromTooltip } from '@guide-views';
 import PasswordStrengthIndicator from '@suite-components/PasswordStrengthIndicator';
 import { useTranslation } from '@suite-hooks';
@@ -200,13 +200,14 @@ const PassphraseTypeCard = (props: Props) => {
         }
     }, [enterPressed, canSubmit, submit, value]);
 
-    const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const onPassphraseChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const tmpValue = event.target.value;
         // spread current value into array
         const newValue = [...value];
         const len = tmpValue.length;
         const pos = event.target.selectionStart ?? len;
         const diff = newValue.length - len;
+        setHiddenWalletTouched(true);
 
         // caret position is somewhere in the middle
         if (pos < len) {
@@ -319,7 +320,7 @@ const PassphraseTypeCard = (props: Props) => {
                             <PassphraseInput
                                 data-test="@passphrase/input"
                                 placeholder={translationString('TR_ENTER_PASSPHRASE')}
-                                onChange={onChange}
+                                onChange={onPassphraseChange}
                                 value={displayValue}
                                 innerRef={ref}
                                 bottomText={

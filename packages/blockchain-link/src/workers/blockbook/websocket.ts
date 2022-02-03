@@ -1,7 +1,8 @@
 import * as WebSocket from 'ws';
 import { EventEmitter } from 'events';
+import { createDeferred, Deferred } from '@trezor/utils/lib/createDeferred';
+
 import { CustomError } from '../../constants/errors';
-import { create as createDeferred, Deferred } from '../../utils/deferred';
 import type {
     BlockNotification,
     AddressNotification,
@@ -32,6 +33,7 @@ interface Options {
     timeout?: number;
     pingTimeout?: number;
     keepAlive?: boolean;
+    agent?: WebSocket.ClientOptions['agent'];
 }
 
 const DEFAULT_TIMEOUT = 20 * 1000;
@@ -196,8 +198,15 @@ export class BlockbookAPI extends EventEmitter {
         // create deferred promise
         const dfd = createDeferred<void>(-1);
 
-        // initialize connection
-        const ws = new WebSocket(url);
+        // initialize connection,
+        // options are not used in web builds (see ./src/utils/ws)
+        const ws = new WebSocket(url, {
+            agent: this.options.agent,
+            headers: {
+                Origin: 'https://node.trezor.io',
+                'User-Agent': 'Trezor Suite',
+            },
+        });
         if (typeof ws.setMaxListeners === 'function') {
             ws.setMaxListeners(Infinity);
         }
