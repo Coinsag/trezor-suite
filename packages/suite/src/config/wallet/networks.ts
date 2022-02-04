@@ -434,6 +434,7 @@ const networks = [
         networkType: 'cardano',
         symbol: 'tada',
         bip43Path: "m/1852'/1815'/i'",
+        label: 'TR_TESTNET_COINS_LABEL',
         decimals: 6,
         testnet: true,
         explorer: {
