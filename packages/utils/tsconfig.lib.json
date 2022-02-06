@@ -1,22 +1,11 @@
 {
-    "compileOnSave": false,
+    "extends": "./tsconfig.json",
     "compilerOptions": {
         "module": "commonjs",
-        "target": "esnext",
-        "outDir": "./lib",
-        "strict": true,
-        "declaration": true,
-        "removeComments": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noErrorTruncation": true,
-        "types": ["jest", "node"]
+        "declarationMap": false,
+        "sourceMap": false,
+        "outDir": "lib",
+        "composite": false
     },
-    "include": ["./src/index.ts", "./src/global.d.ts"],
-    "exclude": [
-        "node_modules",
-        "**/__tests__/**",
-        "**/__fixtures__/**",
-        "**/*.test.ts"
-    ]
+    "include": ["./src"]
 }

@@ -1,15 +1,14 @@
 {
-    "compileOnSave": false,
+    "extends": "./tsconfig.json",
     "compilerOptions": {
         "module": "commonjs",
         "target": "es5",
-        "lib": ["dom", "es2015"],
         "outDir": "./lib",
-        "strict": true,
-        "declaration": true,
-        "removeComments": true,
-        "types": ["jest", "node"]
+        "rootDir": "./src",
+        "tsBuildInfoFile": "./lib/tsconfig.lib.tsbuildinfo",
+        "declarationMap": false,
+        "esModuleInterop": false
     },
-    "include": ["./src/index.ts"],
+    "include": ["./src"],
     "exclude": ["node_modules"]
 }

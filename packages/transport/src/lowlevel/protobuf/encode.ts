@@ -1,4 +1,4 @@
-import ByteBuffer = require('bytebuffer');
+import * as ByteBuffer from 'bytebuffer';
 import { Type } from 'protobufjs/light';
 
 import { isPrimitiveField } from '../../utils/protobuf';

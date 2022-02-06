@@ -127,7 +127,7 @@ const DeviceSelector = (props: React.HTMLAttributes<HTMLDivElement>) => {
             // different count triggers anim
             setTriggerAnim(true);
             // after 1s removes anim, allowing it to restart later
-            shakeAnimationTimerRef.current = setTimeout(() => {
+            shakeAnimationTimerRef.current = window.setTimeout(() => {
                 // makes sure component is still mounted
                 setTriggerAnim(false);
             }, 1000);
@@ -137,7 +137,7 @@ const DeviceSelector = (props: React.HTMLAttributes<HTMLDivElement>) => {
     useEffect(() => {
         // if the device status changes, show wallet state (dis/connected) as text for 2 seconds
         setShowTextStatus(true);
-        stateAnimationTimerRef.current = setTimeout(() => {
+        stateAnimationTimerRef.current = window.setTimeout(() => {
             setShowTextStatus(false);
         }, 2000);
     }, [connectState]);

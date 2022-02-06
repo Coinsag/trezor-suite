@@ -15,7 +15,7 @@
         "dev": "webpack-dev-server --config ./webpack/dev.babel.js --mode development",
         "build": "rm -rf build && webpack --config ./webpack/prod.babel.js --progress",
         "lint": "eslint '**/*{.ts,.tsx}'",
-        "type-check": "tsc --noEmit"
+        "type-check": "tsc --build tsconfig.json"
     },
     "dependencies": {
         "markdown-it": "^8.4.2",
@@ -34,7 +34,8 @@
         "redux-thunk": "^2.3.0",
         "stringify-object": "^3.3.0",
         "styled-components": "^5.3.3",
-        "trezor-connect": "8.2.7-beta.2"
+        "trezor-connect": "8.2.7-beta.2",
+        "@trezor/components": "*"
     },
     "devDependencies": {
         "@types/markdown-it": "12.2.3",

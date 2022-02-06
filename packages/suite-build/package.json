@@ -19,10 +19,11 @@
         "dev:desktop": "yarn run desktop",
         "build:desktop": "NODE_ENV=production yarn run desktop",
         "lint": "eslint '**/*.{ts,tsx,js}'",
-        "type-check": "tsc --project tsconfig.json",
+        "type-check": "tsc --build tsconfig.json",
         "type-check:watch": "yarn type-check -- --watch"
     },
     "dependencies": {
+        "@trezor/suite": "1.0.0",
         "@sentry/webpack-plugin": "^1.18.3",
         "babel-loader": "^8.2.2",
         "babel-plugin-styled-components": "1.12.0",

@@ -10,7 +10,8 @@
     },
     "workspaces": {
         "packages": [
-            "packages/*"
+            "packages/*",
+            "scripts"
         ],
         "nohoist": [
             "**/babel-jest"
@@ -29,6 +30,7 @@
         "suite:dev:desktop": "yarn workspace @trezor/suite-desktop dev",
         "suite:build:web": "yarn workspace @trezor/suite-web build",
         "type-check": "yarn lerna run type-check",
+        "type-check:force": "rimraf -rf **/libDev && yarn type-check",
         "test:unit": "yarn lerna run test:unit",
         "lint:js": "eslint --cache --ignore-path .gitignore --ext .js,.ts,.tsx ./",
         "lint": "yarn lerna run lint:styles && yarn lint:js",
@@ -86,7 +88,7 @@
         "ts-jest": "^26.5.4",
         "ts-node": "^10.3.0",
         "tsconfig-paths": "^3.9.0",
-        "typescript": "4.4.4",
+        "typescript": "4.5.5",
         "yarn-deduplicate": "^3.1.0"
     }
 }

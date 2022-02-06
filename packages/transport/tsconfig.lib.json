@@ -1,23 +1,11 @@
 {
-    "compileOnSave": false,
+    "extends": "./tsconfig.json",
     "compilerOptions": {
         "module": "commonjs",
         "target": "es6",
         "outDir": "./lib",
-        "strict": true,
-        "declaration": true,
-        "removeComments": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "noErrorTruncation": true,
-        "types": ["jest", "node"],
+        "declarationMap": false,
+        "composite": false
     },
-    "include": ["./src/index.ts"],
-    "exclude": [
-        "node_modules",
-        "**/tests/**",
-        "**/fixtures/**",
-        "**/*.test.ts",
-        "**/e2e/**",
-    ]
+    "include": ["./src"]
 }

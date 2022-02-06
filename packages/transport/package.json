@@ -14,14 +14,14 @@
         "Trezor",
         "transport"
     ],
-    "main": "./lib/index.js",
+    "main": "./lib/index",
     "files": [
         "lib/"
     ],
     "scripts": {
         "lint": "eslint '**/*.{ts,tsx,js}'",
-        "type-check": "tsc --project tsconfig.json",
-        "build:lib": "rm -rf lib && tsc --p ./tsconfig.lib.json",
+        "type-check": "tsc --build tsconfig.json",
+        "build:lib": "rm -rf lib && tsc --build ./tsconfig.lib.json",
         "publish:lib": "./scripts/publish-lib.sh",
         "test:unit": "jest",
         "example:bridge": "jest --verbose -c jest.config.e2e.js --testPathPattern bridge.integration"
@@ -29,7 +29,8 @@
     "devDependencies": {
         "@types/bytebuffer": "^5.0.42",
         "@types/jest": "^27.0.1",
-        "@types/w3c-web-usb": "^1.0.5"
+        "@types/w3c-web-usb": "^1.0.5",
+        "@trezor/utils": "1.0.0"
     },
     "dependencies": {
         "@trezor/utils": "1.0.0",

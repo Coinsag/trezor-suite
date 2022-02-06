@@ -22,6 +22,8 @@ module.exports = {
         'src/utils/ws.ts',
         'fixtures',
         'unit/worker/index.ts',
+        'libDev',
+        'lib',
     ],
     setupFiles: ['./tests/setup.js'],
     transform: {
