@@ -5,5 +5,5 @@
         "outDir": "./libDev"
     },
     "include": ["**/*.ts"],
-    "references": []
+    "references": [{ "path": "../utils" }]
 }

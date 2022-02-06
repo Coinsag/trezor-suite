@@ -17,6 +17,8 @@ jobs:
         run: npx yarn-deduplicate --list --fail
       - name: install deps
         run: yarn
+      - name: verify TS project references
+        run: yarn verify-project-references
       - name: build libs
         run: yarn build:libs
       - name: type check
