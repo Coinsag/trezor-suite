@@ -278,11 +278,10 @@ const MetadataLabeling = (props: Props) => {
         // ensures that success state does not appear if it is no longer relevant
         if (isSubscribedToSubmitResult.current === props.payload.defaultValue) {
             setPending(false);
-
             if (result) {
                 setShowSuccess(true);
             }
-            timeout = setTimeout(() => {
+            timeout = window.setTimeout(() => {
                 setShowSuccess(false);
             }, 2000);
         }
