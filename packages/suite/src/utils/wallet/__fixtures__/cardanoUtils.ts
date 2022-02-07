@@ -1,6 +1,6 @@
 export const getChangeAddressParameters = [
     {
-        description: "Get account's change address in changeAddressParameters fromat",
+        description: "Get account's change address in changeAddressParameters format",
         account: {
             deviceState: 'ms1TJk4b4s7aisyL3jfrkCqwznttWwiS4r@B9B340D0982492AF536AEFDF:1',
             index: 0,
@@ -61,10 +61,10 @@ export const getChangeAddressParameters = [
         },
         result: {
             address:
-                'addr_test1qq43pzxxgfdvffrw5jnrej9840nuylaykv7uzcy56t02xv8m2tfs2k368ger3n3pngluz0lympuh65rzarw5vux862dszv2e9w',
+                'addr_test1qpqz745252wmrd2gmttze7njgguzgrp2dk3e8756u7xdwxlm2tfs2k368ger3n3pngluz0lympuh65rzarw5vux862dscg0wdp',
             addressParameters: {
                 addressType: 0,
-                path: "m/1852'/1815'/0'/1/0",
+                path: "m/1852'/1815'/0'/1/1",
                 stakingPath: "m/1852'/1815'/0'/2/0",
             },
         },

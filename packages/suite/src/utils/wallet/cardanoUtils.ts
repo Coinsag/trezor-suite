@@ -33,11 +33,15 @@ export const getStakingPath = (
 export const getChangeAddressParameters = (account: Account) => {
     if (!account.addresses || account.networkType !== 'cardano') return;
     const stakingPath = getStakingPath(account.accountType, account.index);
+    // Find first unused change address or fallback to the last address if all are used (should not happen)
+    const changeAddress =
+        account.addresses.change.find(a => !a.transfers) ||
+        account.addresses.change[account.addresses.change.length - 1];
 
     return {
-        address: account.addresses.change[0].address,
+        address: changeAddress.address,
         addressParameters: {
-            path: account.addresses.change[0].path,
+            path: changeAddress.path,
             addressType: getAddressType(account.accountType),
             stakingPath,
         },
