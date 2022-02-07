@@ -16,6 +16,7 @@ import { AccountSearchAction } from '@wallet-actions/accountSearchActions';
 import { TransactionAction } from '@wallet-actions/transactionActions';
 import { SelectedAccountAction } from '@wallet-actions/selectedAccountActions';
 import { FormDraftAction } from '@wallet-actions/formDraftActions';
+import { PollingAction } from '@wallet-actions/pollingActions';
 import { NETWORKS } from '@wallet-config';
 import { ArrayElement } from '../utils';
 
@@ -65,4 +66,5 @@ export type WalletAction =
     | CoinmarketCommonAction
     | SendFormAction
     | AccountSearchAction
-    | FormDraftAction;
+    | FormDraftAction
+    | PollingAction;
