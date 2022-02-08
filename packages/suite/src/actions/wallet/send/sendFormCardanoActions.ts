@@ -6,6 +6,7 @@ import {
     getProtocolMagic,
     transformUserOutputs,
     transformUtxos,
+    formatMaxOutputAmount,
 } from '@wallet-utils/cardanoUtils';
 import * as notificationActions from '@suite-actions/notificationActions';
 import {
@@ -16,7 +17,7 @@ import {
 } from '@wallet-types/sendForm';
 import { Dispatch, GetState } from '@suite-types';
 import { coinSelection, CoinSelectionError, trezorUtils } from '@fivebinaries/coin-selection';
-import { formatNetworkAmount, isTestnet } from '@suite/utils/wallet/accountUtils';
+import { formatNetworkAmount, isTestnet } from '@wallet-utils/accountUtils';
 
 export const composeTransaction =
     (formValues: FormState, formState: UseSendFormState) =>
@@ -35,7 +36,11 @@ export const composeTransaction =
         }
 
         const utxos = transformUtxos(account.utxo);
-        const outputs = transformUserOutputs(formValues.outputs, formValues.setMaxOutputId);
+        const outputs = transformUserOutputs(
+            formValues.outputs,
+            account.tokens,
+            formValues.setMaxOutputId,
+        );
 
         const wrappedResponse: PrecomposedLevelsCardano = {};
         predefinedLevels.forEach(level => {
@@ -67,10 +72,11 @@ export const composeTransaction =
                               feePerByte: level.feePerUnit,
                               bytes: txPlan.tx.size,
                               totalSpent: txPlan.totalSpent,
-                              max:
-                                  txPlan.max && outputs.find(o => o.setMax && o.assets.length === 0)
-                                      ? formatNetworkAmount(txPlan.max, account.symbol)
-                                      : txPlan.max, // convert lovelace to ADA (for ADA outputs only)
+                              max: formatMaxOutputAmount(
+                                  txPlan.max,
+                                  outputs.find(o => o.setMax),
+                                  account,
+                              ), // convert from lovelace units to ADA
                               ttl: txPlan.ttl,
                               transaction: {
                                   inputs: trezorUtils.transformToTrezorInputs(

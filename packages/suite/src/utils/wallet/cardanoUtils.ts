@@ -6,7 +6,7 @@ import {
     CardanoOutput,
 } from 'trezor-connect';
 import { coinSelection, types } from '@fivebinaries/coin-selection';
-import { amountToSatoshi } from '@wallet-utils/accountUtils';
+import { amountToSatoshi, formatAmount, formatNetworkAmount } from '@wallet-utils/accountUtils';
 import { Account } from '@wallet-types';
 import {
     Output,
@@ -50,11 +50,13 @@ export const getChangeAddressParameters = (account: Account) => {
 
 export const transformUserOutputs = (
     outputs: Output[],
+    accountTokens: Account['tokens'],
     maxOutputIndex?: number,
 ): types.UserOutput[] =>
     outputs.map((output, i) => {
         const setMax = i === maxOutputIndex;
         const amount = output.amount === '' ? undefined : amountToSatoshi(output.amount, 6);
+        const tokenDecimals = accountTokens?.find(t => t.address === output.token)?.decimals ?? 0;
         return {
             address: output.address === '' ? undefined : output.address,
             amount: output.token ? undefined : amount,
@@ -62,7 +64,9 @@ export const transformUserOutputs = (
                 ? [
                       {
                           unit: output.token,
-                          quantity: output.amount || '0',
+                          quantity: output.amount
+                              ? amountToSatoshi(output.amount, tokenDecimals)
+                              : '0',
                       },
                   ]
                 : [],
@@ -228,3 +232,22 @@ export const isCardanoTx = (
 export const isCardanoExternalOutput = (
     output: CardanoOutput,
 ): output is Extract<CardanoOutput, 'address'> => 'address' in output;
+
+export const formatMaxOutputAmount = (
+    maxAmount: string | undefined,
+    maxOutput: types.UserOutput | undefined,
+    account: Account,
+) => {
+    // Converts 'max' amount returned from coinselection in lovelaces (or token equivalent) to ADA (or token unit)
+    if (!maxOutput || !maxAmount) return;
+    if (maxOutput.assets.length === 0) {
+        // output without asset, convert lovelaces to ADA
+        return formatNetworkAmount(maxAmount, account.symbol);
+    }
+
+    // output with a token, format using token decimals
+    const tokenDecimals =
+        account.tokens?.find(t => t.address === maxOutput.assets[0].unit)?.decimals ?? 0;
+
+    return formatAmount(maxAmount, tokenDecimals);
+};

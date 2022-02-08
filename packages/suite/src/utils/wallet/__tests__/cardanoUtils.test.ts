@@ -74,10 +74,19 @@ describe('cardano utils', () => {
 
     fixtures.transformUserOutputs.forEach(f => {
         it(`transformUserOutputs: ${f.description}`, () => {
-            // @ts-ignore params are partial
-            expect(cardanoUtils.transformUserOutputs(f.outputs, f.maxOutputIndex)).toMatchObject(
-                f.result,
-            );
+            expect(
+                // @ts-ignore params are partial
+                cardanoUtils.transformUserOutputs(f.outputs, f.accountTokens, f.maxOutputIndex),
+            ).toMatchObject(f.result);
+        });
+    });
+
+    fixtures.formatMaxOutputAmount.forEach(f => {
+        it(`transformUserOutputs: ${f.description}`, () => {
+            expect(
+                // @ts-ignore params are partial
+                cardanoUtils.formatMaxOutputAmount(f.maxAmount, f.maxOutput, f.account),
+            ).toBe(f.result);
         });
     });
 

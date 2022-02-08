@@ -74,6 +74,7 @@ export const getChangeAddressParameters = [
 export const transformUserOutputs = [
     {
         description: 'precompose output with no amount',
+        accountTokens: [],
         outputs: [
             {
                 type: 'payment',
@@ -101,6 +102,7 @@ export const transformUserOutputs = [
     },
     {
         description: 'precompose output with no address',
+        accountTokens: [],
         outputs: [
             {
                 type: 'payment',
@@ -119,6 +121,13 @@ export const transformUserOutputs = [
     },
     {
         description: '2 complete outputs + 1 setMax output (with token)',
+        accountTokens: [
+            {
+                unit: '57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf391652243484f43',
+                quantity: '100',
+                decimals: 0,
+            },
+        ],
         outputs: [
             {
                 type: 'payment',
@@ -189,6 +198,64 @@ export const transformUserOutputs = [
                 setMax: false,
             },
         ],
+    },
+];
+
+export const formatMaxOutputAmount = [
+    {
+        description: 'lovelace',
+        maxAmount: '2000000',
+        maxOutput: {
+            address:
+                'addr_test1qrpxkw0m95e3slw9lu8ly4uf7ah6v75z0e5zcg5k56n7a45fsj4ymj5xysk9ycxa99gna6vk7u0df4dkm453d5gatp3spmhpt3',
+            amount: '',
+            setMax: true,
+            assets: [],
+        },
+        account: {
+            symbol: 'tada',
+            tokens: [
+                {
+                    address: '57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf391652243484f43',
+                    balance: '500000',
+                    decimals: 5,
+                    name: 'asset1pwhywk7x54g739z3dqs245q62yu47vjh8gapjv',
+                    symbol: 'NUTS',
+                    type: 'BLOCKFROST',
+                },
+            ],
+        },
+        result: '2',
+    },
+    {
+        description: 'token',
+        maxAmount: '2000000',
+        maxOutput: {
+            address:
+                'addr_test1qrpxkw0m95e3slw9lu8ly4uf7ah6v75z0e5zcg5k56n7a45fsj4ymj5xysk9ycxa99gna6vk7u0df4dkm453d5gatp3spmhpt3',
+            amount: undefined,
+            setMax: true,
+            assets: [
+                {
+                    unit: '57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf391652243484f43',
+                    quantity: '',
+                },
+            ],
+        },
+        account: {
+            symbol: 'ada',
+            tokens: [
+                {
+                    address: '57fca08abbaddee36da742a839f7d83a7e1d2419f1507fcbf391652243484f43',
+                    balance: '500000',
+                    decimals: 5,
+                    name: 'asset1pwhywk7x54g739z3dqs245q62yu47vjh8gapjv',
+                    symbol: 'NUTS',
+                    type: 'BLOCKFROST',
+                },
+            ],
+        },
+        result: '20',
     },
 ];
 
