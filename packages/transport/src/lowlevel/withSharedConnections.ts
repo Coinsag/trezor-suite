@@ -107,23 +107,22 @@ export type MessageFromSharedWorker =
       };
 
 export default class LowlevelTransportWithSharedConnections {
-    name = 'LowlevelTransportWithSharedConnections';
-
-    plugin: LowlevelTransportSharedPlugin;
-    debug = false;
-
+    _messages: undefined | any;
+    _sharedWorkerFactory: undefined | (() => SharedWorker);
     // path => promise rejecting on release
+    configured = false;
+    debug = false;
     deferedDebugOnRelease: { [session: string]: Deferred<void> } = {};
     deferedNormalOnRelease: { [session: string]: Deferred<void> } = {};
-
-    _messages: undefined | any;
-    version: string;
-    configured = false;
-
-    _sharedWorkerFactory: undefined | (() => SharedWorker);
+    defereds: { [id: number]: Deferred<MessageFromSharedWorker> } = {};
+    isOutdated = false;
+    latestId = 0;
+    name = 'LowlevelTransportWithSharedConnections';
+    plugin: LowlevelTransportSharedPlugin;
+    requestNeeded = false;
     sharedWorker: null | SharedWorker = null;
-
     stopped = false;
+    version: string;
 
     constructor(
         plugin: LowlevelTransportSharedPlugin,
@@ -402,10 +401,6 @@ export default class LowlevelTransportWithSharedConnections {
         return this.plugin.requestDevice();
     }
 
-    requestNeeded = false;
-
-    latestId = 0;
-    defereds: { [id: number]: Deferred<MessageFromSharedWorker> } = {};
     sendToWorker(message: MessageToSharedWorker) {
         if (this.stopped) {
             // eslint-disable-next-line prefer-promise-reject-errors
@@ -430,8 +425,6 @@ export default class LowlevelTransportWithSharedConnections {
         this.defereds[m.id].resolve(m.message);
         delete this.defereds[m.id];
     }
-
-    isOutdated = false;
 
     stop() {
         this.stopped = true;

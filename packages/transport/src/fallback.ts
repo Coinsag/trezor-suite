@@ -1,16 +1,17 @@
 import type { Transport, AcquireInput, TrezorDeviceInfoWithSession } from './types';
 
 export default class FallbackTransport {
-    name = 'FallbackTransport';
-    activeName = '';
     _availableTransports: Array<Transport> = [];
-    transports: Array<Transport> = [];
-    configured = false;
-    version = '';
-    debug = false;
+    activeName = '';
     // @ts-ignore
     activeTransport: Transport;
+    configured = false;
+    debug = false;
     isOutdated = false;
+    name = 'FallbackTransport';
+    requestNeeded = false;
+    transports: Array<Transport> = [];
+    version = '';
 
     constructor(transports: Array<Transport>) {
         this.transports = transports;
@@ -71,7 +72,6 @@ export default class FallbackTransport {
         this.isOutdated = this.activeTransport.isOutdated;
     }
 
-    // using async so I get Promise.reject on this.activeTransport == null (or other error), not Error
     enumerate() {
         return this.activeTransport.enumerate();
     }
@@ -103,8 +103,6 @@ export default class FallbackTransport {
     requestDevice() {
         return this.activeTransport.requestDevice();
     }
-
-    requestNeeded = false;
 
     setBridgeLatestUrl(url: string) {
         for (const transport of this.transports) {

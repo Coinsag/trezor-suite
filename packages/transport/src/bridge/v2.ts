@@ -18,19 +18,17 @@ type IncompleteRequestOptions = {
 };
 
 export default class BridgeTransport {
-    name = 'BridgeTransport';
-    version = '';
-    isOutdated?: boolean;
-
-    url: string;
-    newestVersionUrl: string;
-    bridgeVersion?: string;
-    debug = false;
-
-    configured = false;
     _messages: ReturnType<typeof parseConfigure> | undefined;
-
+    bridgeVersion?: string;
+    configured = false;
+    debug = false;
+    isOutdated?: boolean;
+    name = 'BridgeTransport';
+    newestVersionUrl: string;
+    requestNeeded = false;
     stopped = false;
+    url: string;
+    version = '';
 
     constructor(url?: string, newestVersionUrl?: string) {
         this.url = url == null ? DEFAULT_URL : url;
@@ -171,8 +169,6 @@ export default class BridgeTransport {
     requestDevice() {
         return Promise.reject();
     }
-
-    requestNeeded = false;
 
     setBridgeLatestUrl(url: string) {
         this.newestVersionUrl = url;

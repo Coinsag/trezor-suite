@@ -21,24 +21,19 @@ const DEBUG_INTERFACE_ID = 1;
 const DEBUG_ENDPOINT_ID = 2;
 
 export default class WebUsbPlugin {
-    name = 'WebUsbPlugin';
-
-    version = '';
-    debug = false;
-
-    usb?: USB;
-
     allowsWriteAndEnumerate = true;
-
     configurationId = CONFIGURATION_ID;
-    normalInterfaceId = INTERFACE_ID;
-    normalEndpointId = ENDPOINT_ID;
-    debugInterfaceId = DEBUG_INTERFACE_ID;
+    debug = false;
     debugEndpointId = DEBUG_ENDPOINT_ID;
-
+    debugInterfaceId = DEBUG_INTERFACE_ID;
+    name = 'WebUsbPlugin';
+    normalEndpointId = ENDPOINT_ID;
+    normalInterfaceId = INTERFACE_ID;
+    requestNeeded = true;
     unreadableHidDevice = false;
-
     unreadableHidDeviceChange = new EventEmitter();
+    usb?: USB;
+    version = '';
 
     init(debug?: boolean) {
         this.debug = !!debug;
@@ -210,6 +205,4 @@ export default class WebUsbPlugin {
         // I am throwing away the resulting device, since it appears in enumeration anyway
         await this.usb!.requestDevice({ filters: TREZOR_DESCS });
     }
-
-    requestNeeded = true;
 }
