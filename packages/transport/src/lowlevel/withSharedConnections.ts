@@ -11,9 +11,9 @@ import { postModuleMessage } from './sharedConnectionWorker';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const stringify = require('json-stable-stringify');
 
-function stableStringify(devices?: Array<TrezorDeviceInfoWithSession>): string {
+function stableStringify(devices?: Array<TrezorDeviceInfoWithSession>) {
     if (devices == null) {
-        return `null`;
+        return 'null';
     }
 
     const pureDevices = devices.map(device => {
@@ -25,7 +25,7 @@ function stableStringify(devices?: Array<TrezorDeviceInfoWithSession>): string {
     return stringify(pureDevices);
 }
 
-function compare(a: TrezorDeviceInfoWithSession, b: TrezorDeviceInfoWithSession): number {
+function compare(a: TrezorDeviceInfoWithSession, b: TrezorDeviceInfoWithSession) {
     if (!Number.isNaN(parseInt(a.path, 10))) {
         return parseInt(a.path, 10) - parseInt(b.path, 10);
     }
@@ -107,7 +107,7 @@ export type MessageFromSharedWorker =
       };
 
 export default class LowlevelTransportWithSharedConnections {
-    name = `LowlevelTransportWithSharedConnections`;
+    name = 'LowlevelTransportWithSharedConnections';
 
     plugin: LowlevelTransportSharedPlugin;
     debug = false;
@@ -134,29 +134,29 @@ export default class LowlevelTransportWithSharedConnections {
         this._sharedWorkerFactory = sharedWorkerFactory;
         if (!this.plugin.allowsWriteAndEnumerate) {
             // This should never happen anyway
-            throw new Error(`Plugin with shared connections cannot disallow write and enumerate`);
+            throw new Error('Plugin with shared connections cannot disallow write and enumerate');
         }
     }
 
-    enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
+    enumerate() {
         return this._silentEnumerate();
     }
 
-    async _silentEnumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
-        await this.sendToWorker({ type: `enumerate-intent` });
+    async _silentEnumerate() {
+        await this.sendToWorker({ type: 'enumerate-intent' });
         let devices: Array<TrezorDeviceInfoDebug> = [];
         try {
             devices = await this.plugin.enumerate();
         } finally {
-            await this.sendToWorker({ type: `enumerate-done` });
+            await this.sendToWorker({ type: 'enumerate-done' });
         }
 
         const sessionsM = await this.sendToWorker({
-            type: `get-sessions-and-disconnect`,
+            type: 'get-sessions-and-disconnect',
             devices,
         });
-        if (sessionsM.type !== `sessions`) {
-            throw new Error(`Wrong reply`);
+        if (sessionsM.type !== 'sessions') {
+            throw new Error('Wrong reply');
         }
         const { debugSessions } = sessionsM;
         const { normalSessions } = sessionsM;
@@ -195,9 +195,9 @@ export default class LowlevelTransportWithSharedConnections {
         });
     }
 
-    _lastStringified = ``;
+    _lastStringified = '';
 
-    listen(old: Array<TrezorDeviceInfoWithSession>): Promise<Array<TrezorDeviceInfoWithSession>> {
+    listen(old: Array<TrezorDeviceInfoWithSession>) {
         const oldStringified = stableStringify(old);
         const last = old == null ? this._lastStringified : oldStringified;
         return this._runIter(0, last);
@@ -217,19 +217,19 @@ export default class LowlevelTransportWithSharedConnections {
         return this._runIter(iteration + 1, stringified);
     }
 
-    async acquire(input: AcquireInput, debugLink: boolean): Promise<string> {
+    async acquire(input: AcquireInput, debugLink: boolean) {
         const messBack = await this.sendToWorker({
-            type: `acquire-intent`,
+            type: 'acquire-intent',
             path: input.path,
             previous: input.previous,
             debug: debugLink,
         });
-        if (messBack.type === `wrong-previous-session`) {
-            throw new Error(`wrong previous session`);
+        if (messBack.type === 'wrong-previous-session') {
+            throw new Error('wrong previous session');
         }
 
-        if (messBack.type !== `other-session`) {
-            throw new Error(`Strange reply`);
+        if (messBack.type !== 'other-session') {
+            throw new Error('Strange reply');
         }
 
         const reset = messBack.otherSession == null;
@@ -237,16 +237,16 @@ export default class LowlevelTransportWithSharedConnections {
         try {
             await this.plugin.connect(input.path, debugLink, reset);
         } catch (e) {
-            await this.sendToWorker({ type: `acquire-failed` });
+            await this.sendToWorker({ type: 'acquire-failed' });
             throw e;
         }
 
-        const messBack2 = await this.sendToWorker({ type: `acquire-done` });
-        if (messBack2.type !== `session-number`) {
-            throw new Error(`Strange reply.`);
+        const messBack2 = await this.sendToWorker({ type: 'acquire-done' });
+        if (messBack2.type !== 'session-number') {
+            throw new Error('Strange reply.');
         }
 
-        const session: string = messBack2.number;
+        const session = messBack2.number;
         if (debugLink) {
             this.deferedDebugOnRelease[session] = createDeferred();
         } else {
@@ -255,24 +255,24 @@ export default class LowlevelTransportWithSharedConnections {
         return session;
     }
 
-    async release(session: string, onclose: boolean, debugLink: boolean): Promise<void> {
+    async release(session: string, onclose: boolean, debugLink: boolean) {
         if (onclose && !debugLink) {
             // if we wait for worker messages, shared worker survives
             // and delays closing
             // so we "fake" release
-            this.sendToWorker({ type: `release-onclose`, session });
+            this.sendToWorker({ type: 'release-onclose', session });
             return;
         }
         const messback = await this.sendToWorker({
-            type: `release-intent`,
+            type: 'release-intent',
             session,
             debug: debugLink,
         });
-        if (messback.type === `double-release`) {
-            throw new Error(`Trying to double release.`);
+        if (messback.type === 'double-release') {
+            throw new Error('Trying to double release.');
         }
-        if (messback.type !== `path`) {
-            throw new Error(`Strange reply.`);
+        if (messback.type !== 'path') {
+            throw new Error('Strange reply.');
         }
         const { path } = messback;
         const { otherSession } = messback;
@@ -284,13 +284,13 @@ export default class LowlevelTransportWithSharedConnections {
         } catch (e) {
             // ignore release errors, it's not important that much
         }
-        await this.sendToWorker({ type: `release-done` });
+        await this.sendToWorker({ type: 'release-done' });
     }
 
     _releaseCleanup(session: string, debugLink: boolean) {
         const table = debugLink ? this.deferedDebugOnRelease : this.deferedNormalOnRelease;
         if (table[session] != null) {
-            table[session].reject(new Error(`Device released or disconnected`));
+            table[session].reject(new Error('Device released or disconnected'));
             delete table[session];
         }
     }
@@ -309,9 +309,9 @@ export default class LowlevelTransportWithSharedConnections {
         return () => this.plugin.receive(path, debug);
     }
 
-    messages(): any {
+    messages() {
         if (this._messages == null) {
-            throw new Error(`Transport not configured.`);
+            throw new Error('Transport not configured.');
         }
         return this._messages;
     }
@@ -321,9 +321,9 @@ export default class LowlevelTransportWithSharedConnections {
         debugLink: boolean,
         inside: (path: string) => Promise<X>,
     ): Promise<X> {
-        const sessionsM = await this.sendToWorker({ type: `get-sessions` });
-        if (sessionsM.type !== `sessions`) {
-            throw new Error(`Wrong reply`);
+        const sessionsM = await this.sendToWorker({ type: 'get-sessions' });
+        if (sessionsM.type !== 'sessions') {
+            throw new Error('Wrong reply');
         }
         const sessionsMM = debugLink ? sessionsM.debugSessions : sessionsM.normalSessions;
 
@@ -335,9 +335,9 @@ export default class LowlevelTransportWithSharedConnections {
         });
 
         if (path_ == null) {
-            throw new Error(`Session not available.`);
+            throw new Error('Session not available.');
         }
-        const path: string = path_;
+        const path = path_;
 
         const resPromise = await inside(path);
 
@@ -354,7 +354,7 @@ export default class LowlevelTransportWithSharedConnections {
         data: Record<string, unknown>,
         debugLink: boolean,
     ): Promise<MessageFromTrezor> {
-        const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
+        const callInside = async (path: string) => {
             const messages = this.messages();
             await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
             const message = await receiveAndParse(messages, this._receiveLowlevel(path, debugLink));
@@ -364,13 +364,8 @@ export default class LowlevelTransportWithSharedConnections {
         return this.doWithSession(session, debugLink, callInside);
     }
 
-    post(
-        session: string,
-        name: string,
-        data: Record<string, unknown>,
-        debugLink: boolean,
-    ): Promise<void> {
-        const callInside: (path: string) => Promise<void> = async (path: string) => {
+    post(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
+        const callInside = async (path: string) => {
             const messages = this.messages();
             await buildAndSend(messages, this._sendLowlevel(path, debugLink), name, data);
         };
@@ -379,7 +374,7 @@ export default class LowlevelTransportWithSharedConnections {
     }
 
     read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
-        const callInside: (path: string) => Promise<MessageFromTrezor> = async (path: string) => {
+        const callInside = async (path: string) => {
             const messages = this.messages();
             const message = await receiveAndParse(messages, this._receiveLowlevel(path, debugLink));
             return message;
@@ -388,7 +383,7 @@ export default class LowlevelTransportWithSharedConnections {
         return this.doWithSession(session, debugLink, callInside);
     }
 
-    async init(debug?: boolean): Promise<void> {
+    async init(debug?: boolean) {
         this.debug = !!debug;
         this.requestNeeded = this.plugin.requestNeeded;
         await this.plugin.init(debug);
@@ -403,7 +398,7 @@ export default class LowlevelTransportWithSharedConnections {
         }
     }
 
-    requestDevice(): Promise<void> {
+    requestDevice() {
         return this.plugin.requestDevice();
     }
 
@@ -411,10 +406,10 @@ export default class LowlevelTransportWithSharedConnections {
 
     latestId = 0;
     defereds: { [id: number]: Deferred<MessageFromSharedWorker> } = {};
-    sendToWorker(message: MessageToSharedWorker): Promise<MessageFromSharedWorker> {
+    sendToWorker(message: MessageToSharedWorker) {
         if (this.stopped) {
             // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject(`Transport stopped.`);
+            return Promise.reject('Transport stopped.');
         }
 
         this.latestId++;
@@ -438,7 +433,7 @@ export default class LowlevelTransportWithSharedConnections {
 
     isOutdated = false;
 
-    stop(): void {
+    stop() {
         this.stopped = true;
         this.sharedWorker = null;
     }

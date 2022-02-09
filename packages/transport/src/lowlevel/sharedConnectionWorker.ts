@@ -233,7 +233,7 @@ function handleMessage(
 // TODO:
 // proper ts configuration for lib webworker
 // @ts-ignore
-if (typeof onconnect !== `undefined`) {
+if (typeof onconnect !== 'undefined') {
     // @ts-ignore
     onconnect = function (e) {
         const port = e.ports[0];

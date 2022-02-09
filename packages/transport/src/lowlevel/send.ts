@@ -7,10 +7,7 @@ import { encode as encodeProtocol } from './protocol';
 import { createMessageFromName } from './protobuf/messages';
 
 // Sends more buffers to device.
-async function sendBuffers(
-    sender: (data: Buffer) => Promise<void>,
-    buffers: Array<Buffer>,
-): Promise<void> {
+async function sendBuffers(sender: (data: Buffer) => Promise<void>, buffers: Array<Buffer>) {
     for (const buffer of buffers) {
         await sender(buffer);
     }
@@ -46,7 +43,7 @@ export function buildAndSend(
     sender: (data: Buffer) => Promise<void>,
     name: string,
     data: Record<string, unknown>,
-): Promise<void> {
+) {
     const buffers = buildBuffers(messages, name, data);
     return sendBuffers(sender, buffers);
 }

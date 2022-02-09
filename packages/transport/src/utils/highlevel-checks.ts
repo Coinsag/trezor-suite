@@ -4,7 +4,7 @@ import type { TrezorDeviceInfoWithSession, MessageFromTrezor } from '../types';
 
 const ERROR = 'Wrong result type.';
 
-export function info(res: any): { version: string; configured: boolean } {
+export function info(res: any) {
     if (typeof res !== 'object' || res == null) {
         throw new Error('Wrong result type.');
     }

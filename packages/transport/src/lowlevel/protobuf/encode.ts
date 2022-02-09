@@ -12,7 +12,7 @@ const transform = (fieldType: string, value: any) => {
         if (typeof value === 'string' && !value) return value;
 
         // normal flow
-        return Buffer.from(value, `hex`);
+        return Buffer.from(value, 'hex');
     }
     if (typeof value === 'number' && !Number.isSafeInteger(value)) {
         throw new RangeError('field value is not within safe integer range');

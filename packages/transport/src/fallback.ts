@@ -1,9 +1,4 @@
-import type {
-    Transport,
-    AcquireInput,
-    TrezorDeviceInfoWithSession,
-    MessageFromTrezor,
-} from './types';
+import type { Transport, AcquireInput, TrezorDeviceInfoWithSession } from './types';
 
 export default class FallbackTransport {
     name = 'FallbackTransport';
@@ -22,7 +17,7 @@ export default class FallbackTransport {
     }
 
     // first one that inits successfully is the final one; others won't even start initiating
-    async _tryInitTransports(): Promise<Array<Transport>> {
+    async _tryInitTransports() {
         const res: Array<Transport> = [];
         let lastError: any = null;
         for (const transport of this.transports) {
@@ -40,7 +35,7 @@ export default class FallbackTransport {
     }
 
     // first one that inits successfully is the final one; others won't even start initing
-    async _tryConfigureTransports(data: JSON | string): Promise<Transport> {
+    async _tryConfigureTransports(data: JSON | string) {
         let lastError: any = null;
         for (const transport of this._availableTransports) {
             try {
@@ -53,7 +48,7 @@ export default class FallbackTransport {
         throw lastError || new Error('No transport could be initialized.');
     }
 
-    async init(debug?: boolean): Promise<void> {
+    async init(debug?: boolean) {
         this.debug = !!debug;
 
         // init ALL OF THEM
@@ -66,7 +61,7 @@ export default class FallbackTransport {
         this.configured = false;
     }
 
-    async configure(signedData: JSON | string): Promise<void> {
+    async configure(signedData: JSON | string) {
         const pt: Promise<Transport> = this._tryConfigureTransports(signedData);
         this.activeTransport = await pt;
         this.configured = this.activeTransport.configured;
@@ -77,63 +72,53 @@ export default class FallbackTransport {
     }
 
     // using async so I get Promise.reject on this.activeTransport == null (or other error), not Error
-    enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
+    enumerate() {
         return this.activeTransport.enumerate();
     }
 
-    listen(old?: Array<TrezorDeviceInfoWithSession>): Promise<Array<TrezorDeviceInfoWithSession>> {
+    listen(old?: Array<TrezorDeviceInfoWithSession>) {
         return this.activeTransport.listen(old);
     }
 
-    acquire(input: AcquireInput, debugLink: boolean): Promise<string> {
+    acquire(input: AcquireInput, debugLink: boolean) {
         return this.activeTransport.acquire(input, debugLink);
     }
 
-    release(session: string, onclose: boolean, debugLink: boolean): Promise<void> {
+    release(session: string, onclose: boolean, debugLink: boolean) {
         return this.activeTransport.release(session, onclose, debugLink);
     }
 
-    call(
-        session: string,
-        name: string,
-        data: Record<string, unknown>,
-        debugLink: boolean,
-    ): Promise<MessageFromTrezor> {
+    call(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         return this.activeTransport.call(session, name, data, debugLink);
     }
 
-    post(
-        session: string,
-        name: string,
-        data: Record<string, unknown>,
-        debugLink: boolean,
-    ): Promise<void> {
+    post(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         return this.activeTransport.post(session, name, data, debugLink);
     }
 
-    read(session: string, debugLink: boolean): Promise<MessageFromTrezor> {
+    read(session: string, debugLink: boolean) {
         return this.activeTransport.read(session, debugLink);
     }
 
-    requestDevice(): Promise<void> {
+    requestDevice() {
         return this.activeTransport.requestDevice();
     }
 
     requestNeeded = false;
 
-    setBridgeLatestUrl(url: string): void {
+    setBridgeLatestUrl(url: string) {
         for (const transport of this.transports) {
             transport.setBridgeLatestUrl(url);
         }
     }
 
-    setBridgeLatestVersion(version: string): void {
+    setBridgeLatestVersion(version: string) {
         for (const transport of this.transports) {
             transport.setBridgeLatestVersion(version);
         }
     }
 
-    stop(): void {
+    stop() {
         for (const transport of this.transports) {
             transport.stop();
         }

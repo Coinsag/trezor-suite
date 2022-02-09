@@ -18,8 +18,8 @@ type IncompleteRequestOptions = {
 };
 
 export default class BridgeTransport {
-    name = `BridgeTransport`;
-    version = ``;
+    name = 'BridgeTransport';
+    version = '';
     isOutdated?: boolean;
 
     url: string;
@@ -40,35 +40,35 @@ export default class BridgeTransport {
     _post(options: IncompleteRequestOptions) {
         if (this.stopped) {
             // eslint-disable-next-line prefer-promise-reject-errors
-            return Promise.reject(`Transport stopped.`);
+            return Promise.reject('Transport stopped.');
         }
         return http({
             ...options,
-            method: `POST`,
+            method: 'POST',
             url: this.url + options.url,
             skipContentTypeHeader: true,
         });
     }
 
-    async init(debug: boolean): Promise<void> {
+    async init(debug: boolean) {
         this.debug = !!debug;
         await this._silentInit();
     }
 
-    async _silentInit(): Promise<void> {
+    async _silentInit() {
         const infoS = await http({
             url: this.url,
-            method: `POST`,
+            method: 'POST',
         });
         const info = check.info(infoS);
         this.version = info.version;
         const newVersion =
-            typeof this.bridgeVersion === `string`
+            typeof this.bridgeVersion === 'string'
                 ? this.bridgeVersion
                 : check.version(
                       await http({
                           url: `${this.newestVersionUrl}?${Date.now()}`,
-                          method: `GET`,
+                          method: 'GET',
                       }),
                   );
         this.isOutdated = versionUtils.isNewer(newVersion, this.version);
@@ -80,29 +80,27 @@ export default class BridgeTransport {
         this._messages = messages;
     }
 
-    async listen(
-        old?: Array<TrezorDeviceInfoWithSession>,
-    ): Promise<Array<TrezorDeviceInfoWithSession>> {
+    async listen(old?: Array<TrezorDeviceInfoWithSession>) {
         if (old == null) {
-            throw new Error(`Bridge v2 does not support listen without previous.`);
+            throw new Error('Bridge v2 does not support listen without previous.');
         }
         const devicesS = await this._post({
-            url: `/listen`,
+            url: '/listen',
             body: old,
         });
         const devices = check.devices(devicesS);
         return devices;
     }
 
-    async enumerate(): Promise<Array<TrezorDeviceInfoWithSession>> {
-        const devicesS = await this._post({ url: `/enumerate` });
+    async enumerate() {
+        const devicesS = await this._post({ url: '/enumerate' });
         const devices = check.devices(devicesS);
         return devices;
     }
 
     _acquireMixed(input: AcquireInput, debugLink: boolean) {
-        const previousStr = input.previous == null ? `null` : input.previous;
-        const url = `${debugLink ? `/debug` : ``}/acquire/${input.path}/${previousStr}`;
+        const previousStr = input.previous == null ? 'null' : input.previous;
+        const url = `${debugLink ? '/debug' : ''}/acquire/${input.path}/${previousStr}`;
         return this._post({ url });
     }
 
@@ -113,7 +111,7 @@ export default class BridgeTransport {
 
     async release(session: string, onclose: boolean, debugLink: boolean) {
         const res = this._post({
-            url: `${debugLink ? `/debug` : ``}/release/${session}`,
+            url: `${debugLink ? '/debug' : ''}/release/${session}`,
         });
         if (onclose) {
             return;
@@ -123,17 +121,17 @@ export default class BridgeTransport {
 
     async call(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         if (this._messages == null) {
-            throw new Error(`Transport not configured.`);
+            throw new Error('Transport not configured.');
         }
         const messages = this._messages;
         const o = buildOne(messages, name, data);
-        const outData = o.toString(`hex`);
+        const outData = o.toString('hex');
         const resData = await this._post({
-            url: `${debugLink ? `/debug` : ``}/call/${session}`,
+            url: `${debugLink ? '/debug' : ''}/call/${session}`,
             body: outData,
         });
-        if (typeof resData !== `string`) {
-            throw new Error(`Returning data is not string.`);
+        if (typeof resData !== 'string') {
+            throw new Error('Returning data is not string.');
         }
         const jsonData = receiveOne(messages, resData);
         return check.call(jsonData);
@@ -141,26 +139,26 @@ export default class BridgeTransport {
 
     async post(session: string, name: string, data: Record<string, unknown>, debugLink: boolean) {
         if (this._messages == null) {
-            throw new Error(`Transport not configured.`);
+            throw new Error('Transport not configured.');
         }
         const messages = this._messages;
-        const outData = buildOne(messages, name, data).toString(`hex`);
+        const outData = buildOne(messages, name, data).toString('hex');
         await this._post({
-            url: `${debugLink ? `/debug` : ``}/post/${session}`,
+            url: `${debugLink ? '/debug' : ''}/post/${session}`,
             body: outData,
         });
     }
 
     async read(session: string, debugLink: boolean) {
         if (this._messages == null) {
-            throw new Error(`Transport not configured.`);
+            throw new Error('Transport not configured.');
         }
         const messages = this._messages;
         const resData = await this._post({
-            url: `${debugLink ? `/debug` : ``}/read/${session}`,
+            url: `${debugLink ? '/debug' : ''}/read/${session}`,
         });
-        if (typeof resData !== `string`) {
-            throw new Error(`Returning data is not string.`);
+        if (typeof resData !== 'string') {
+            throw new Error('Returning data is not string.');
         }
         const jsonData = receiveOne(messages, resData);
         return check.call(jsonData);
