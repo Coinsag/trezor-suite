@@ -1,29 +1,1823 @@
 diff --git a/node_modules/trezor-connect/lib/backend/BlockchainLink.js b/node_modules/trezor-connect/lib/backend/BlockchainLink.js
-index 765cf6b..63e79d6 100644
+index 765cf6b..a119e35 100644
 --- a/node_modules/trezor-connect/lib/backend/BlockchainLink.js
 +++ b/node_modules/trezor-connect/lib/backend/BlockchainLink.js
-@@ -38,6 +38,9 @@ var getWorker = function getWorker(type) {
-     case 'blockfrost':
-       return _workers.BlockfrostWorker;
+@@ -59,9 +59,16 @@ var Blockchain = /*#__PURE__*/function () {
  
-+    case 'electrum':
-+      return _workers.ElectrumWorker;
+     if (!worker) {
+       throw _constants.ERRORS.TypedError('Backend_WorkerMissing', "BlockchainLink worker not found " + blockchainLink.type);
+-    }
++    } // map clean urls in to object. key = onion domain, value = clean domain
 +
-     default:
-       return null;
+ 
+-    var server = options.onionDomains ? (0, _urlUtils.getOnionDomain)(blockchainLink.url, options.onionDomains) : blockchainLink.url;
++    var onionDomains = options.onionDomains;
++    this.onionDomains = onionDomains ? blockchainLink.url.reduce(function (a, url) {
++      var onion = (0, _urlUtils.getOnionDomain)(url, onionDomains);
++      a[onion] = url;
++      return a;
++    }, {}) : {};
++    var server = onionDomains ? Object.keys(this.onionDomains) : blockchainLink.url;
+     this.link = new _blockchainLink["default"]({
+       name: this.coinInfo.shortcut,
+       worker: worker,
+@@ -92,7 +99,7 @@ var Blockchain = /*#__PURE__*/function () {
+           switch (_context2.prev = _context2.next) {
+             case 0:
+               this.link.on('connected', /*#__PURE__*/(0, _asyncToGenerator2["default"])( /*#__PURE__*/_regenerator["default"].mark(function _callee() {
+-                var info, shortcut;
++                var info, shortcut, cleanUrl;
+                 return _regenerator["default"].wrap(function _callee$(_context) {
+                   while (1) {
+                     switch (_context.prev = _context.next) {
+@@ -116,14 +123,18 @@ var Blockchain = /*#__PURE__*/function () {
+                         return _context.abrupt("return");
+ 
+                       case 7:
+-                        // eslint-disable-next-line no-use-before-define
+-                        setPreferredBacked(_this.coinInfo, info.url);
++                        // find clean domain for current connection
++                        cleanUrl = _this.onionDomains[info.url]; // eslint-disable-next-line no-use-before-define
++
++                        setPreferredBacked(_this.coinInfo, cleanUrl || info.url);
+ 
+-                        _this.postMessage((0, _builder.BlockchainMessage)(_constants.BLOCKCHAIN.CONNECT, _objectSpread({
++                        _this.postMessage((0, _builder.BlockchainMessage)(_constants.BLOCKCHAIN.CONNECT, _objectSpread(_objectSpread({
+                           coin: _this.coinInfo
+-                        }, info)));
++                        }, info), {}, {
++                          cleanUrl: cleanUrl
++                        })));
+ 
+-                      case 9:
++                      case 10:
+                       case "end":
+                         return _context.stop();
+                     }
+@@ -481,7 +492,7 @@ var initBlockchain = /*#__PURE__*/function () {
+               postMessage: postMessage,
+               debug: _DataManager["default"].getSettings('debug'),
+               proxy: _DataManager["default"].getSettings('proxy'),
+-              onionDomains: _DataManager["default"].getSettings('useOnionLinks') ? _DataManager["default"].getConfig().onionDomains : undefined
++              onionDomains: _DataManager["default"].getSettings('useOnionLinks') && !customBackends[coinInfo.shortcut] ? _DataManager["default"].getConfig().onionDomains : undefined
+             });
+             instances.push(backend);
+             _context6.prev = 4;
+diff --git a/node_modules/trezor-connect/lib/backend/BlockchainLink.js.flow b/node_modules/trezor-connect/lib/backend/BlockchainLink.js.flow
+index 3920487..0f29b2b 100644
+--- a/node_modules/trezor-connect/lib/backend/BlockchainLink.js.flow
++++ b/node_modules/trezor-connect/lib/backend/BlockchainLink.js.flow
+@@ -47,6 +47,8 @@ export default class Blockchain {
+ 
+     coinInfo: $ElementType<Options, 'coinInfo'>;
+ 
++    onionDomains: { [onion: string]: string };
++
+     postMessage: $ElementType<Options, 'postMessage'>;
+ 
+     feeForBlock: Fee[] = [];
+@@ -70,9 +72,17 @@ export default class Blockchain {
+             );
+         }
+ 
+-        const server = options.onionDomains
+-            ? getOnionDomain(blockchainLink.url, options.onionDomains)
+-            : blockchainLink.url;
++        // map clean urls in to object. key = onion domain, value = clean domain
++        const { onionDomains } = options;
++        this.onionDomains = onionDomains
++            ? blockchainLink.url.reduce((a, url) => {
++                  const onion = getOnionDomain(url, onionDomains);
++                  a[onion] = url;
++                  return a;
++              }, {})
++            : {};
++
++        const server = onionDomains ? Object.keys(this.onionDomains) : blockchainLink.url;
+ 
+         this.link = new BlockchainLink({
+             name: this.coinInfo.shortcut,
+@@ -106,13 +116,17 @@ export default class Blockchain {
+                 return;
+             }
+ 
++            // find clean domain for current connection
++            const cleanUrl = this.onionDomains[info.url];
++
+             // eslint-disable-next-line no-use-before-define
+-            setPreferredBacked(this.coinInfo, info.url);
++            setPreferredBacked(this.coinInfo, cleanUrl || info.url);
+ 
+             this.postMessage(
+                 BlockchainMessage(BLOCKCHAIN.CONNECT, {
+                     coin: this.coinInfo,
+                     ...info,
++                    cleanUrl,
+                 }),
+             );
+         });
+@@ -331,9 +345,10 @@ export const initBlockchain = async (
+             postMessage,
+             debug: DataManager.getSettings('debug'),
+             proxy: DataManager.getSettings('proxy'),
+-            onionDomains: DataManager.getSettings('useOnionLinks')
+-                ? DataManager.getConfig().onionDomains
+-                : undefined,
++            onionDomains:
++                DataManager.getSettings('useOnionLinks') && !customBackends[coinInfo.shortcut]
++                    ? DataManager.getConfig().onionDomains
++                    : undefined,
+         });
+         instances.push(backend);
+ 
+diff --git a/node_modules/trezor-connect/lib/core/methods/ComposeTransaction.js b/node_modules/trezor-connect/lib/core/methods/ComposeTransaction.js
+index e88167a..f966dc5 100644
+--- a/node_modules/trezor-connect/lib/core/methods/ComposeTransaction.js
++++ b/node_modules/trezor-connect/lib/core/methods/ComposeTransaction.js
+@@ -194,7 +194,6 @@ var ComposeTransaction = /*#__PURE__*/function (_AbstractMethod) {
+                 var tx = _objectSpread({}, composer.composed.custom); // needs to spread otherwise flow has a problem with ComposeResult vs PrecomposedTransaction (max could be undefined)
+ 
+ 
+-                // needs to spread otherwise flow has a problem with ComposeResult vs PrecomposedTransaction (max could be undefined)
+                 if (tx.type === 'final') {
+                   var inputs = tx.transaction.inputs.map(function (inp) {
+                     return (0, _tx.inputToTrezor)(inp, _this.params.sequence || 0xffffffff);
+diff --git a/node_modules/trezor-connect/lib/core/methods/EosSignTransaction.js.flow b/node_modules/trezor-connect/lib/core/methods/EosSignTransaction.js.flow
+index 057e945..55c94ed 100644
+--- a/node_modules/trezor-connect/lib/core/methods/EosSignTransaction.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/EosSignTransaction.js.flow
+@@ -11,8 +11,8 @@ import type { EosTxHeader, EosTxActionAck } from '../../types/trezor/protobuf';
+ type Params = {
+     path: number[],
+     chain_id: string,
+-    header?: EosTxHeader,
+-    ack: EosTxActionAck[],
++    header: EosTxHeader,
++    ack: $Exact<EosTxActionAck>[],
+ };
+ 
+ export default class EosSignTransaction extends AbstractMethod<'eosSignTransaction'> {
+diff --git a/node_modules/trezor-connect/lib/core/methods/SignMessage.js b/node_modules/trezor-connect/lib/core/methods/SignMessage.js
+index ecb4d10..987084d 100644
+--- a/node_modules/trezor-connect/lib/core/methods/SignMessage.js
++++ b/node_modules/trezor-connect/lib/core/methods/SignMessage.js
+@@ -62,9 +62,9 @@ var SignMessage = /*#__PURE__*/function (_AbstractMethod) {
+     }
+ 
+     this.info = (0, _pathUtils.getLabel)('Sign #NETWORK message', coinInfo); // firmware range depends on used no_script_type parameter
+-    // AOPP is possible since 1.10/42.4.3
++    // no_script_type is possible since 1.10.4 / 2.4.3
+ 
+-    this.firmwareRange = (0, _paramsValidator.getFirmwareRange)(payload.no_script_type ? 'aopp' : this.name, coinInfo, this.firmwareRange);
++    this.firmwareRange = (0, _paramsValidator.getFirmwareRange)(payload.no_script_type ? 'signMessageNoScriptType' : this.name, coinInfo, this.firmwareRange);
+     var messageHex = payload.hex ? (0, _formatUtils.messageToHex)(payload.message) : Buffer.from(payload.message, 'utf8').toString('hex');
+     var scriptType = (0, _pathUtils.getScriptType)(path);
+     this.params = {
+diff --git a/node_modules/trezor-connect/lib/core/methods/SignMessage.js.flow b/node_modules/trezor-connect/lib/core/methods/SignMessage.js.flow
+index 626dde5..f10be5f 100644
+--- a/node_modules/trezor-connect/lib/core/methods/SignMessage.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/SignMessage.js.flow
+@@ -37,9 +37,9 @@ export default class SignMessage extends AbstractMethod<'signMessage'> {
+         this.info = getLabel('Sign #NETWORK message', coinInfo);
+ 
+         // firmware range depends on used no_script_type parameter
+-        // AOPP is possible since 1.10/42.4.3
++        // no_script_type is possible since 1.10.4 / 2.4.3
+         this.firmwareRange = getFirmwareRange(
+-            payload.no_script_type ? 'aopp' : this.name,
++            payload.no_script_type ? 'signMessageNoScriptType' : this.name,
+             coinInfo,
+             this.firmwareRange,
+         );
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/binanceSignTx.js.flow b/node_modules/trezor-connect/lib/core/methods/helpers/binanceSignTx.js.flow
+index 334492e..d2edb49 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/binanceSignTx.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/binanceSignTx.js.flow
+@@ -30,7 +30,7 @@ const processTxRequest = async (
+ };
+ 
+ // validate and translate params to protobuf
+-export const validate = (tx: BinanceSDKTransaction) => {
++export const validate = (tx: $Shape<BinanceSDKTransaction>) => {
+     validateParams(tx, [
+         { name: 'chain_id', type: 'string', required: true },
+         { name: 'account_number', type: 'number' },
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js b/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js
+index 3a2d663..7fcfc98 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js
+@@ -353,14 +353,14 @@ var parseAction = function parseAction(action) {
+ };
+ 
+ var validate = function validate(address_n, tx) {
+-  var header = tx.header ? {
++  var header = {
+     expiration: typeof tx.header.expiration === 'number' ? tx.header.expiration : parseDate(tx.header.expiration),
+     ref_block_num: tx.header.refBlockNum,
+     ref_block_prefix: tx.header.refBlockPrefix,
+     max_net_usage_words: tx.header.maxNetUsageWords,
+     max_cpu_usage_ms: tx.header.maxCpuUsageMs,
+     delay_sec: tx.header.delaySec
+-  } : undefined;
++  };
+   var ack = [];
+   tx.actions.forEach(function (action) {
+     ack.push(parseAction(action));
+@@ -377,7 +377,7 @@ exports.validate = validate;
+ var CHUNK_SIZE = 2048;
+ 
+ var getDataChunk = function getDataChunk(data, offset) {
+-  if (!data || offset < 0 || data.length < offset) return;
++  if (!data || offset < 0 || data.length < offset) return '';
+   var o = offset > 0 ? data.length - offset * 2 : 0;
+   return data.substring(o, o + CHUNK_SIZE * 2);
+ };
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js.flow b/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js.flow
+index 8f3cfaf..8e1af0f 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/eosSignTx.js.flow
+@@ -182,7 +182,7 @@ const parseDate = (d: string) => {
+     return Date.parse(d) / 1000;
+ };
+ 
+-const parseAck = (action: Action): EosTxActionAck | null => {
++const parseAck = (action: Action) => {
+     switch (action.name) {
+         case 'transfer':
+             return {
+@@ -296,7 +296,7 @@ const parseAck = (action: Action): EosTxActionAck | null => {
+     }
+ };
+ 
+-const parseUnknown = (action: Action): EosTxActionAck | null => {
++const parseUnknown = (action: Action) => {
+     if (typeof action.data !== 'string') return null;
+     return {
+         unknown: {
+@@ -315,7 +315,7 @@ const parseCommon = (action: Action): EosActionCommon => ({
+     })),
+ });
+ 
+-const parseAction = (action: any): EosTxActionAck => {
++const parseAction = (action: any) => {
+     const ack = parseAck(action) || parseUnknown(action);
+     return {
+         common: parseCommon(action),
+@@ -324,21 +324,19 @@ const parseAction = (action: any): EosTxActionAck => {
+ };
+ 
+ export const validate = (address_n: number[], tx: EosSDKTransaction) => {
+-    const header = tx.header
+-        ? {
+-              expiration:
+-                  typeof tx.header.expiration === 'number'
+-                      ? tx.header.expiration
+-                      : parseDate(tx.header.expiration),
+-              ref_block_num: tx.header.refBlockNum,
+-              ref_block_prefix: tx.header.refBlockPrefix,
+-              max_net_usage_words: tx.header.maxNetUsageWords,
+-              max_cpu_usage_ms: tx.header.maxCpuUsageMs,
+-              delay_sec: tx.header.delaySec,
+-          }
+-        : undefined;
++    const header = {
++        expiration:
++            typeof tx.header.expiration === 'number'
++                ? tx.header.expiration
++                : parseDate(tx.header.expiration),
++        ref_block_num: tx.header.refBlockNum,
++        ref_block_prefix: tx.header.refBlockPrefix,
++        max_net_usage_words: tx.header.maxNetUsageWords,
++        max_cpu_usage_ms: tx.header.maxCpuUsageMs,
++        delay_sec: tx.header.delaySec,
++    };
+ 
+-    const ack: EosTxActionAck[] = [];
++    const ack: $Exact<EosTxActionAck>[] = [];
+     tx.actions.forEach(action => {
+         ack.push(parseAction(action));
+     });
+@@ -353,8 +351,8 @@ export const validate = (address_n: number[], tx: EosSDKTransaction) => {
+ // sign transaction logic
+ 
+ const CHUNK_SIZE = 2048;
+-const getDataChunk = (data: ?string, offset: number) => {
+-    if (!data || offset < 0 || data.length < offset) return;
++const getDataChunk = (data: string, offset: number) => {
++    if (!data || offset < 0 || data.length < offset) return '';
+     const o = offset > 0 ? data.length - offset * 2 : 0;
+     return data.substring(o, o + CHUNK_SIZE * 2);
+ };
+@@ -362,7 +360,7 @@ const getDataChunk = (data: ?string, offset: number) => {
+ const processTxRequest = async (
+     typedCall: TypedCall,
+     message: EosTxActionRequest,
+-    actions: EosTxActionAck[],
++    actions: $Exact<EosTxActionAck>[],
+     index: number,
+ ) => {
+     const action = actions[index];
+@@ -408,8 +406,8 @@ export const signTx = async (
+     typedCall: TypedCall,
+     address_n: number[],
+     chain_id: string,
+-    header?: EosTxHeader,
+-    actions: EosTxActionAck[],
++    header: EosTxHeader,
++    actions: $Exact<EosTxActionAck>[],
+ ) => {
+     const response = await typedCall('EosSignTx', 'EosTxActionRequest', {
+         address_n,
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js b/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js
+index 6066c73..71d5312 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js
+@@ -109,7 +109,7 @@ var aggregateModificationMessage = function aggregateModificationMessage(tx) {
+ var provisionNamespaceMessage = function provisionNamespaceMessage(tx) {
+   return {
+     namespace: tx.newPart,
+-    parent: tx.parent || undefined,
++    parent: tx.parent,
+     sink: tx.rentalFeeSink,
+     fee: tx.rentalFee
+   };
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js.flow b/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js.flow
+index 3d02100..a19c321 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/nemSignTx.js.flow
+@@ -107,7 +107,7 @@ const provisionNamespaceMessage = (
+     tx: $T.NEMProvisionNamespaceTransaction,
+ ): NEMProvisionNamespace => ({
+     namespace: tx.newPart,
+-    parent: tx.parent || undefined,
++    parent: tx.parent,
+     sink: tx.rentalFeeSink,
+     fee: tx.rentalFee,
+ });
+@@ -168,7 +168,7 @@ const supplyChangeMessage = (tx: $T.NEMSupplyChangeTransaction): NEMMosaicSupply
+ 
+ export const createTx = (tx: $T.NEMTransaction, address_n: number[]) => {
+     let transaction = tx;
+-    const message: NEMSignTx = {
++    const message: $Exact<NEMSignTx> = {
+         transaction: getCommon(tx, address_n),
+         transfer: undefined,
+         importance_transfer: undefined,
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js b/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js
+index f84e210..2b98e9f 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js
+@@ -14,6 +14,12 @@ var _versionUtils = require("../../../utils/versionUtils");
+ 
+ var _DataManager = _interopRequireDefault(require("../../../data/DataManager"));
+ 
++function _createForOfIteratorHelperLoose(o, allowArrayLike) { var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"]; if (it) return (it = it.call(o)).next.bind(it); if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") { if (it) o = it; var i = 0; return function () { if (i >= o.length) return { done: true }; return { done: false, value: o[i++] }; }; } throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method."); }
++
++function _unsupportedIterableToArray(o, minLen) { if (!o) return; if (typeof o === "string") return _arrayLikeToArray(o, minLen); var n = Object.prototype.toString.call(o).slice(8, -1); if (n === "Object" && o.constructor) n = o.constructor.name; if (n === "Map" || n === "Set") return Array.from(o); if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen); }
++
++function _arrayLikeToArray(arr, len) { if (len == null || len > arr.length) len = arr.length; for (var i = 0, arr2 = new Array(len); i < len; i++) { arr2[i] = arr[i]; } return arr2; }
++
+ var invalidParameter = function invalidParameter(message) {
+   return _constants.ERRORS.TypedError('Method_InvalidParameter', message);
+ };
+@@ -116,7 +122,7 @@ var getFirmwareRange = function getFirmwareRange(method, coinInfo, currentRange)
+   var _DataManager$getConfi = _DataManager["default"].getConfig(),
+       supportedFirmware = _DataManager$getConfi.supportedFirmware;
+ 
+-  var range = supportedFirmware.filter(function (rule) {
++  var ranges = supportedFirmware.filter(function (rule) {
+     // check if rule applies to requested method
+     if (rule.methods) {
+       return rule.methods.includes(method);
+@@ -130,7 +136,7 @@ var getFirmwareRange = function getFirmwareRange(method, coinInfo, currentRange)
+ 
+ 
+     return true;
+-  }).find(function (c) {
++  }).filter(function (c) {
+     if (c.coinType) {
+       // rule for coin type
+       return c.coinType === coinType;
+@@ -145,7 +151,8 @@ var getFirmwareRange = function getFirmwareRange(method, coinInfo, currentRange)
+     return c.methods || c.capabilities;
+   });
+ 
+-  if (range) {
++  for (var _iterator = _createForOfIteratorHelperLoose(ranges), _step; !(_step = _iterator()).done;) {
++    var range = _step.value;
+     var min = range.min,
+         max = range.max; // override defaults
+     // NOTE:
+diff --git a/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js.flow b/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js.flow
+index 6735819..4c98ce4 100644
+--- a/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js.flow
++++ b/node_modules/trezor-connect/lib/core/methods/helpers/paramsValidator.js.flow
+@@ -127,7 +127,7 @@ export const getFirmwareRange = (
+     const shortcut = coinInfo ? coinInfo.shortcut.toLowerCase() : null;
+     // find firmware range in config.json
+     const { supportedFirmware } = DataManager.getConfig();
+-    const range = supportedFirmware
++    const ranges = supportedFirmware
+         .filter(rule => {
+             // check if rule applies to requested method
+             if (rule.methods) {
+@@ -141,7 +141,7 @@ export const getFirmwareRange = (
+             // it may be a global rule for coin or coinType
+             return true;
+         })
+-        .find(c => {
++        .filter(c => {
+             if (c.coinType) {
+                 // rule for coin type
+                 return c.coinType === coinType;
+@@ -154,7 +154,7 @@ export const getFirmwareRange = (
+             return c.methods || c.capabilities;
+         });
+ 
+-    if (range) {
++    for (const range of ranges) {
+         const { min, max } = range;
+         // override defaults
+         // NOTE:
+diff --git a/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js b/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js
+index 031e08c..3321a99 100644
+--- a/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js
++++ b/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js
+@@ -39,7 +39,7 @@ var ReactNativePlugin = /*#__PURE__*/function () {
+     (0, _defineProperty2["default"])(this, "debug", false);
+     (0, _defineProperty2["default"])(this, "allowsWriteAndEnumerate", true);
+     (0, _defineProperty2["default"])(this, "requestNeeded", false);
+-    this.usb = _reactNative.NativeModules.RNBridge;
++    this.usb = _reactNative.NativeModules.TrezorTransport;
    }
-diff --git a/node_modules/trezor-connect/lib/env/node/workers.js b/node_modules/trezor-connect/lib/env/node/workers.js
-index 4ca7840..f2c38cb 100644
---- a/node_modules/trezor-connect/lib/env/node/workers.js
-+++ b/node_modules/trezor-connect/lib/env/node/workers.js
-@@ -16,6 +16,10 @@ exports.RippleWorker = _ripple["default"];
- var _blockfrost = _interopRequireDefault(require("@trezor/blockchain-link/lib/workers/blockfrost"));
  
- exports.BlockfrostWorker = _blockfrost["default"];
+   var _proto = ReactNativePlugin.prototype;
+diff --git a/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js.flow b/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js.flow
+index 6d69b5a..ed794cc 100644
+--- a/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js.flow
++++ b/node_modules/trezor-connect/lib/env/react-native/RNUsbPlugin.js.flow
+@@ -8,7 +8,7 @@ type TrezorDeviceInfoDebug = {
+     debug: boolean,
+ };
+ 
+-interface RNBridge {
++interface TrezorTransport {
+     enumerate(): Promise<TrezorDeviceInfoDebug[]>;
+     acquire(path: string, debugLink: boolean): Promise<void>;
+     release(path: string, debugLink: boolean, closePort: boolean): Promise<void>;
+@@ -42,10 +42,10 @@ export default class ReactNativePlugin {
+ 
+     requestNeeded = false;
+ 
+-    usb: RNBridge;
++    usb: TrezorTransport;
+ 
+     constructor() {
+-        this.usb = NativeModules.RNBridge;
++        this.usb = NativeModules.TrezorTransport;
+     }
+ 
+     init(debug: ?boolean) {
+diff --git a/node_modules/trezor-connect/lib/types/backend/blockchain.js.flow b/node_modules/trezor-connect/lib/types/backend/blockchain.js.flow
+index f15ecb3..f7d08b0 100644
+--- a/node_modules/trezor-connect/lib/types/backend/blockchain.js.flow
++++ b/node_modules/trezor-connect/lib/types/backend/blockchain.js.flow
+@@ -8,6 +8,7 @@ import type { CoreMessage } from '../params';
+ export type BlockchainInfo = {
+     coin: CoinInfo,
+     url: string,
++    cleanUrl?: string,
+     blockHash: string,
+     blockHeight: number,
+     decimals: number,
+diff --git a/node_modules/trezor-connect/lib/types/networks/binance.js.flow b/node_modules/trezor-connect/lib/types/networks/binance.js.flow
+index a72f1cd..005bc93 100644
+--- a/node_modules/trezor-connect/lib/types/networks/binance.js.flow
++++ b/node_modules/trezor-connect/lib/types/networks/binance.js.flow
+@@ -53,7 +53,15 @@ export type BinancePreparedMessage =
+           type: 'BinanceCancelMsg',
+       });
+ 
+-export type BinancePreparedTransaction = BinanceSDKTransaction & {
++// todo: a better way to make some of the props from BinanceSDKTransaction required
++// and keep others as they are?
++// does not work: $NonMaybeType<BinanceSDKTransaction>
++export type BinancePreparedTransaction = {
++    ...BinanceSDKTransaction,
++    account_number: number,
++    sequence: number,
++    source: number,
++} & {
+     messages: BinancePreparedMessage[],
+ };
+ 
+diff --git a/node_modules/trezor-connect/lib/types/networks/eos.js.flow b/node_modules/trezor-connect/lib/types/networks/eos.js.flow
+index 388c041..dea60f0 100644
+--- a/node_modules/trezor-connect/lib/types/networks/eos.js.flow
++++ b/node_modules/trezor-connect/lib/types/networks/eos.js.flow
+@@ -60,7 +60,7 @@ export type EosTxAction =
+               from: string,
+               to: string,
+               quantity: string,
+-              memo?: string,
++              memo: string,
+           },
+       })
+     | (EosTxActionCommon & {
+@@ -70,7 +70,7 @@ export type EosTxAction =
+               receiver: string,
+               stake_net_quantity: string,
+               stake_cpu_quantity: string,
+-              transfer?: boolean,
++              transfer: boolean,
+           },
+       })
+     | (EosTxActionCommon & {
+@@ -148,7 +148,7 @@ export type EosTxAction =
+ 
+ export type EosSDKTransaction = {
+     chainId: string,
+-    header: ?EosTxHeader,
++    header: EosTxHeader,
+     actions: Array<EosTxAction | (EosTxActionCommon & { name: string, data: string })>,
+     // actions: EosTxAction[];
+ };
+diff --git a/node_modules/trezor-connect/lib/types/networks/nem.js.flow b/node_modules/trezor-connect/lib/types/networks/nem.js.flow
+index 89268b2..98f2147 100644
+--- a/node_modules/trezor-connect/lib/types/networks/nem.js.flow
++++ b/node_modules/trezor-connect/lib/types/networks/nem.js.flow
+@@ -44,7 +44,7 @@ type TransactionCommon = {
+     version: number,
+     timeStamp: number,
+     fee: number,
+-    deadline?: number,
++    deadline: number,
+     signer?: string,
+ };
+ 
+@@ -74,24 +74,24 @@ export type NEMAggregateModificationTransaction = TransactionCommon & {
+ 
+ export type NEMProvisionNamespaceTransaction = TransactionCommon & {
+     type: 0x2001,
+-    newPart?: string,
++    newPart: string,
+     parent?: string,
+-    rentalFeeSink?: string,
+-    rentalFee?: number,
++    rentalFeeSink: string,
++    rentalFee: number,
+ };
+ 
+ export type NEMMosaicCreationTransaction = TransactionCommon & {
+     type: 0x4001,
+     mosaicDefinition: MosaicDefinition,
+-    creationFeeSink?: string,
+-    creationFee?: number,
++    creationFeeSink: string,
++    creationFee: number,
+ };
+ 
+ export type NEMSupplyChangeTransaction = TransactionCommon & {
+     type: 0x4002,
+     mosaicId: MosaicID,
+     supplyType: number,
+-    delta?: number,
++    delta: number,
+ };
+ 
+ type Transaction =
+diff --git a/node_modules/trezor-connect/lib/types/networks/ripple.js.flow b/node_modules/trezor-connect/lib/types/networks/ripple.js.flow
+index 31435e0..0989780 100644
+--- a/node_modules/trezor-connect/lib/types/networks/ripple.js.flow
++++ b/node_modules/trezor-connect/lib/types/networks/ripple.js.flow
+@@ -24,9 +24,9 @@ type Payment = {
+ };
+ 
+ export type RippleTransaction = {
+-    fee?: string,
++    fee: string,
+     flags?: number,
+-    sequence?: number,
++    sequence: number,
+     maxLedgerVersion?: number, // Proto: "last_ledger_sequence"
+     payment: Payment,
+ };
+diff --git a/node_modules/trezor-connect/lib/types/trezor/protobuf.js b/node_modules/trezor-connect/lib/types/trezor/protobuf.js
+index 74882b8..56fe9cf 100644
+--- a/node_modules/trezor-connect/lib/types/trezor/protobuf.js
++++ b/node_modules/trezor-connect/lib/types/trezor/protobuf.js
+@@ -1,7 +1,7 @@
+ "use strict";
+ 
+ exports.__esModule = true;
+-exports.Enum_TezosBallotType = exports.Enum_TezosContractType = exports.Enum_StellarSignerType = exports.Enum_StellarMemoType = exports.Enum_StellarAssetType = exports.Enum_NEMImportanceTransferMode = exports.Enum_NEMModificationType = exports.Enum_NEMSupplyChangeType = exports.Enum_NEMMosaicLevy = exports.Enum_WordRequestType = exports.Enum_RecoveryDeviceType = exports.Enum_SdProtectOperationType = exports.Enum_Capability = exports.Enum_SafetyCheckLevel = exports.Enum_BackupType = exports.Enum_EthereumDataType = exports.Enum_PinMatrixRequestType = exports.Enum_ButtonRequestType = exports.Enum_FailureType = exports.Enum_CardanoTxWitnessType = exports.Enum_CardanoTxSigningMode = exports.Enum_CardanoTxAuxiliaryDataSupplementType = exports.Enum_CardanoPoolRelayType = exports.Enum_CardanoCertificateType = exports.Enum_CardanoNativeScriptHashDisplayFormat = exports.Enum_CardanoNativeScriptType = exports.Enum_CardanoAddressType = exports.Enum_CardanoDerivationType = exports.Enum_RequestType = exports.Enum_AmountUnit = exports.Enum_DecredStakingSpendType = exports.Enum_OutputScriptType = exports.Enum_InputScriptType = exports.Enum_BinanceTimeInForce = exports.Enum_BinanceOrderSide = exports.Enum_BinanceOrderType = void 0;
++exports.Enum_TezosBallotType = exports.Enum_TezosContractType = exports.Enum_StellarSignerType = exports.Enum_StellarMemoType = exports.Enum_StellarAssetType = exports.Enum_NEMImportanceTransferMode = exports.Enum_NEMModificationType = exports.Enum_NEMSupplyChangeType = exports.Enum_NEMMosaicLevy = exports.Enum_WordRequestType = exports.Enum_RecoveryDeviceType = exports.Enum_SdProtectOperationType = exports.Enum_Capability = exports.Enum_SafetyCheckLevel = exports.Enum_BackupType = exports.Enum_EthereumDataType = exports.Enum_DebugButton = exports.Enum_PinMatrixRequestType = exports.Enum_ButtonRequestType = exports.Enum_FailureType = exports.Enum_CardanoTxWitnessType = exports.Enum_CardanoTxSigningMode = exports.Enum_CardanoTxAuxiliaryDataSupplementType = exports.Enum_CardanoPoolRelayType = exports.Enum_CardanoCertificateType = exports.Enum_CardanoNativeScriptHashDisplayFormat = exports.Enum_CardanoNativeScriptType = exports.Enum_CardanoAddressType = exports.Enum_CardanoDerivationType = exports.Enum_RequestType = exports.Enum_AmountUnit = exports.Enum_DecredStakingSpendType = exports.Enum_OutputScriptType = exports.Enum_InputScriptType = exports.Enum_BinanceTimeInForce = exports.Enum_BinanceOrderSide = exports.Enum_BinanceOrderType = void 0;
+ // This file is auto generated from data/messages/message.json
+ // custom type uint32/64 may be represented as string
+ // BinanceGetAddress
+@@ -185,6 +185,12 @@ var Enum_PinMatrixRequestType = Object.freeze({
+   PinMatrixRequestType_WipeCodeSecond: 5
+ });
+ exports.Enum_PinMatrixRequestType = Enum_PinMatrixRequestType;
++var Enum_DebugButton = Object.freeze({
++  NO: 0,
++  YES: 1,
++  INFO: 2
++});
++exports.Enum_DebugButton = Enum_DebugButton;
+ var Enum_EthereumDataType = Object.freeze({
+   UINT: 1,
+   INT: 2,
+diff --git a/node_modules/trezor-connect/lib/types/trezor/protobuf.js.flow b/node_modules/trezor-connect/lib/types/trezor/protobuf.js.flow
+index 47bdb91..09a1ca4 100644
+--- a/node_modules/trezor-connect/lib/types/trezor/protobuf.js.flow
++++ b/node_modules/trezor-connect/lib/types/trezor/protobuf.js.flow
+@@ -29,24 +29,24 @@ export type BinancePublicKey = {
+ // BinanceSignTx
+ export type BinanceSignTx = {
+     address_n: number[],
+-    msg_count?: number,
+-    account_number?: number,
++    msg_count: number,
++    account_number: number,
+     chain_id?: string,
+     memo?: string,
+-    sequence?: number,
+-    source?: number,
++    sequence: number,
++    source: number,
+ };
+ 
+ // BinanceTxRequest
+ export type BinanceTxRequest = {};
+ 
+ export type BinanceCoin = {
+-    amount?: UintType,
+-    denom?: string,
++    amount: UintType,
++    denom: string,
+ };
+ 
+ export type BinanceInputOutput = {
+-    address?: string,
++    address: string,
+     coins: BinanceCoin[],
+ };
+ 
+@@ -82,13 +82,13 @@ export type BinanceTimeInForce = $Values<typeof Enum_BinanceTimeInForce>;
+ // BinanceOrderMsg
+ export type BinanceOrderMsg = {
+     id?: string,
+-    ordertype?: BinanceOrderType,
+-    price?: number,
+-    quantity?: number,
++    ordertype: BinanceOrderType,
++    price: number,
++    quantity: number,
+     sender?: string,
+-    side?: BinanceOrderSide,
++    side: BinanceOrderSide,
+     symbol?: string,
+-    timeinforce?: BinanceTimeInForce,
++    timeinforce: BinanceTimeInForce,
+ };
+ 
+ // BinanceCancelMsg
+@@ -1065,6 +1065,13 @@ export type ECDHSessionKey = {
+     public_key?: string,
+ };
+ 
++export const Enum_DebugButton = Object.freeze({
++    NO: 0,
++    YES: 1,
++    INFO: 2,
++});
++export type DebugButton = $Values<typeof Enum_DebugButton>;
 +
-+var _electrum = _interopRequireDefault(require("@trezor/blockchain-link/lib/workers/electrum"));
+ // EosGetPublicKey
+ export type EosGetPublicKey = {
+     address_n: number[],
+@@ -1089,9 +1096,9 @@ export type EosTxHeader = {
+ // EosSignTx
+ export type EosSignTx = {
+     address_n: number[],
+-    chain_id?: string,
+-    header?: EosTxHeader,
+-    num_actions?: number,
++    chain_id: string,
++    header: EosTxHeader,
++    num_actions: number,
+ };
+ 
+ // EosTxActionRequest
+@@ -1100,13 +1107,13 @@ export type EosTxActionRequest = {
+ };
+ 
+ export type EosAsset = {
+-    amount?: UintType,
+-    symbol?: string,
++    amount: UintType,
++    symbol: string,
+ };
+ 
+ export type EosPermissionLevel = {
+-    actor?: string,
+-    permission?: string,
++    actor: string,
++    permission: string,
+ };
+ 
+ export type EosAuthorizationKey = {
+@@ -1117,117 +1124,117 @@ export type EosAuthorizationKey = {
+ };
+ 
+ export type EosAuthorizationAccount = {
+-    account?: EosPermissionLevel,
+-    weight?: number,
++    account: EosPermissionLevel,
++    weight: number,
+ };
+ 
+ export type EosAuthorizationWait = {
+-    wait_sec?: number,
+-    weight?: number,
++    wait_sec: number,
++    weight: number,
+ };
+ 
+ export type EosAuthorization = {
+-    threshold?: number,
++    threshold: number,
+     keys: EosAuthorizationKey[],
+     accounts: EosAuthorizationAccount[],
+     waits: EosAuthorizationWait[],
+ };
+ 
+ export type EosActionCommon = {
+-    account?: string,
+-    name?: string,
++    account: string,
++    name: string,
+     authorization: EosPermissionLevel[],
+ };
+ 
+ export type EosActionTransfer = {
+-    sender?: string,
+-    receiver?: string,
+-    quantity?: EosAsset,
+-    memo?: string,
++    sender: string,
++    receiver: string,
++    quantity: EosAsset,
++    memo: string,
+ };
+ 
+ export type EosActionDelegate = {
+-    sender?: string,
+-    receiver?: string,
+-    net_quantity?: EosAsset,
+-    cpu_quantity?: EosAsset,
+-    transfer?: boolean,
++    sender: string,
++    receiver: string,
++    net_quantity: EosAsset,
++    cpu_quantity: EosAsset,
++    transfer: boolean,
+ };
+ 
+ export type EosActionUndelegate = {
+-    sender?: string,
+-    receiver?: string,
+-    net_quantity?: EosAsset,
+-    cpu_quantity?: EosAsset,
++    sender: string,
++    receiver: string,
++    net_quantity: EosAsset,
++    cpu_quantity: EosAsset,
+ };
+ 
+ export type EosActionRefund = {
+-    owner?: string,
++    owner: string,
+ };
+ 
+ export type EosActionBuyRam = {
+-    payer?: string,
+-    receiver?: string,
+-    quantity?: EosAsset,
++    payer: string,
++    receiver: string,
++    quantity: EosAsset,
+ };
+ 
+ export type EosActionBuyRamBytes = {
+-    payer?: string,
+-    receiver?: string,
+-    bytes?: number,
++    payer: string,
++    receiver: string,
++    bytes: number,
+ };
+ 
+ export type EosActionSellRam = {
+-    account?: string,
+-    bytes?: number,
++    account: string,
++    bytes: number,
+ };
+ 
+ export type EosActionVoteProducer = {
+-    voter?: string,
+-    proxy?: string,
++    voter: string,
++    proxy: string,
+     producers: string[],
+ };
+ 
+ export type EosActionUpdateAuth = {
+-    account?: string,
+-    permission?: string,
+-    parent?: string,
+-    auth?: EosAuthorization,
++    account: string,
++    permission: string,
++    parent: string,
++    auth: EosAuthorization,
+ };
+ 
+ export type EosActionDeleteAuth = {
+-    account?: string,
+-    permission?: string,
++    account: string,
++    permission: string,
+ };
+ 
+ export type EosActionLinkAuth = {
+-    account?: string,
+-    code?: string,
+-    type?: string,
+-    requirement?: string,
++    account: string,
++    code: string,
++    type: string,
++    requirement: string,
+ };
+ 
+ export type EosActionUnlinkAuth = {
+-    account?: string,
+-    code?: string,
+-    type?: string,
++    account: string,
++    code: string,
++    type: string,
+ };
+ 
+ export type EosActionNewAccount = {
+-    creator?: string,
+-    name?: string,
+-    owner?: EosAuthorization,
+-    active?: EosAuthorization,
++    creator: string,
++    name: string,
++    owner: EosAuthorization,
++    active: EosAuthorization,
+ };
+ 
+ export type EosActionUnknown = {
+     data_size: number,
+-    data_chunk?: string,
++    data_chunk: string,
+ };
+ 
+ // EosTxActionAck
+ export type EosTxActionAck = {
+-    common?: EosActionCommon,
++    common: EosActionCommon,
+     transfer?: EosActionTransfer,
+     delegate?: EosActionDelegate,
+     undelegate?: EosActionUndelegate,
+@@ -1390,18 +1397,11 @@ export type EthereumVerifyMessage = {
+     address: string,
+ };
+ 
+-export const Enum_BackupType = Object.freeze({
+-    Bip39: 0,
+-    Slip39_Basic: 1,
+-    Slip39_Advanced: 2,
+-});
+-export type BackupType = $Keys<typeof Enum_BackupType>;
+-
+ // EthereumSignTypedHash
+ export type EthereumSignTypedHash = {
+     address_n: number[],
+     domain_separator_hash: string,
+-    message_hash: string,
++    message_hash?: string,
+ };
+ 
+ // EthereumTypedDataSignature
+@@ -1410,6 +1410,13 @@ export type EthereumTypedDataSignature = {
+     address: string,
+ };
+ 
++export const Enum_BackupType = Object.freeze({
++    Bip39: 0,
++    Slip39_Basic: 1,
++    Slip39_Advanced: 2,
++});
++export type BackupType = $Keys<typeof Enum_BackupType>;
 +
-+exports.ElectrumWorker = _electrum["default"];
- var WebUsbPlugin = undefined;
- exports.WebUsbPlugin = WebUsbPlugin;
- var ReactNativeUsbPlugin = undefined;
+ export const Enum_SafetyCheckLevel = Object.freeze({
+     Strict: 0,
+     PromptAlways: 1,
+@@ -1474,7 +1481,6 @@ export type Features = {
+     fw_minor: number | null,
+     fw_patch: number | null,
+     fw_vendor: string | null,
+-    fw_vendor_keys: string | null,
+     unfinished_backup: boolean | null,
+     no_backup: boolean | null,
+     recovery_mode: boolean | null,
+@@ -1661,31 +1667,31 @@ export type NEMAddress = {
+ export type NEMTransactionCommon = {
+     address_n?: number[],
+     network?: number,
+-    timestamp?: number,
+-    fee?: UintType,
+-    deadline?: number,
++    timestamp: number,
++    fee: UintType,
++    deadline: number,
+     signer?: string,
+ };
+ 
+ export type NEMMosaic = {
+-    namespace?: string,
+-    mosaic?: string,
+-    quantity?: number,
++    namespace: string,
++    mosaic: string,
++    quantity: number,
+ };
+ 
+ export type NEMTransfer = {
+-    recipient?: string,
+-    amount?: UintType,
++    recipient: string,
++    amount: UintType,
+     payload?: string,
+     public_key?: string,
+     mosaics?: NEMMosaic[],
+ };
+ 
+ export type NEMProvisionNamespace = {
+-    namespace?: string,
++    namespace: string,
+     parent?: string,
+-    sink?: string,
+-    fee?: UintType,
++    sink: string,
++    fee: UintType,
+ };
+ 
+ export const Enum_NEMMosaicLevy = Object.freeze({
+@@ -1697,8 +1703,8 @@ export type NEMMosaicLevy = $Values<typeof Enum_NEMMosaicLevy>;
+ export type NEMMosaicDefinition = {
+     name?: string,
+     ticker?: string,
+-    namespace?: string,
+-    mosaic?: string,
++    namespace: string,
++    mosaic: string,
+     divisibility?: number,
+     levy?: NEMMosaicLevy,
+     fee?: UintType,
+@@ -1708,14 +1714,14 @@ export type NEMMosaicDefinition = {
+     supply?: number,
+     mutable_supply?: boolean,
+     transferable?: boolean,
+-    description?: string,
++    description: string,
+     networks?: number[],
+ };
+ 
+ export type NEMMosaicCreation = {
+-    definition?: NEMMosaicDefinition,
+-    sink?: string,
+-    fee?: UintType,
++    definition: NEMMosaicDefinition,
++    sink: string,
++    fee: UintType,
+ };
+ 
+ export const Enum_NEMSupplyChangeType = Object.freeze({
+@@ -1725,10 +1731,10 @@ export const Enum_NEMSupplyChangeType = Object.freeze({
+ export type NEMSupplyChangeType = $Values<typeof Enum_NEMSupplyChangeType>;
+ 
+ export type NEMMosaicSupplyChange = {
+-    namespace?: string,
+-    mosaic?: string,
+-    type?: NEMSupplyChangeType,
+-    delta?: number,
++    namespace: string,
++    mosaic: string,
++    type: NEMSupplyChangeType,
++    delta: number,
+ };
+ 
+ export const Enum_NEMModificationType = Object.freeze({
+@@ -1738,8 +1744,8 @@ export const Enum_NEMModificationType = Object.freeze({
+ export type NEMModificationType = $Values<typeof Enum_NEMModificationType>;
+ 
+ export type NEMCosignatoryModification = {
+-    type?: NEMModificationType,
+-    public_key?: string,
++    type: NEMModificationType,
++    public_key: string,
+ };
+ 
+ export type NEMAggregateModification = {
+@@ -1754,13 +1760,13 @@ export const Enum_NEMImportanceTransferMode = Object.freeze({
+ export type NEMImportanceTransferMode = $Values<typeof Enum_NEMImportanceTransferMode>;
+ 
+ export type NEMImportanceTransfer = {
+-    mode?: NEMImportanceTransferMode,
+-    public_key?: string,
++    mode: NEMImportanceTransferMode,
++    public_key: string,
+ };
+ 
+ // NEMSignTx
+ export type NEMSignTx = {
+-    transaction?: NEMTransactionCommon,
++    transaction: NEMTransactionCommon,
+     multisig?: NEMTransactionCommon,
+     transfer?: NEMTransfer,
+     cosigning?: boolean,
+@@ -1810,11 +1816,11 @@ export type RipplePayment = {
+ // RippleSignTx
+ export type RippleSignTx = {
+     address_n: number[],
+-    fee?: UintType,
++    fee: UintType,
+     flags?: number,
+-    sequence?: number,
++    sequence: number,
+     last_ledger_sequence?: number,
+-    payment?: RipplePayment,
++    payment: RipplePayment,
+ };
+ 
+ // RippleSignedTx
+@@ -2052,8 +2058,8 @@ export type TezosRevealOp = {
+ };
+ 
+ export type TezosManagerTransfer = {
+-    destination?: TezosContractID,
+-    amount?: UintType,
++    destination: TezosContractID,
++    amount: UintType,
+ };
+ 
+ export type TezosParametersManager = {
+@@ -2098,8 +2104,8 @@ export type TezosDelegationOp = {
+ };
+ 
+ export type TezosProposalOp = {
+-    source?: string,
+-    period?: number,
++    source: string,
++    period: number,
+     proposals: string[],
+ };
+ 
+@@ -2111,10 +2117,10 @@ export const Enum_TezosBallotType = Object.freeze({
+ export type TezosBallotType = $Values<typeof Enum_TezosBallotType>;
+ 
+ export type TezosBallotOp = {
+-    source?: string,
+-    period?: number,
+-    proposal?: string,
+-    ballot?: TezosBallotType,
++    source: string,
++    period: number,
++    proposal: string,
++    ballot: TezosBallotType,
+ };
+ 
+ // TezosSignTx
+@@ -2142,12 +2148,12 @@ export type MessageType = {
+     BinanceAddress: $Exact<BinanceAddress>,
+     BinanceGetPublicKey: BinanceGetPublicKey,
+     BinancePublicKey: $Exact<BinancePublicKey>,
+-    BinanceSignTx: BinanceSignTx,
++    BinanceSignTx: $Exact<BinanceSignTx>,
+     BinanceTxRequest: BinanceTxRequest,
+-    BinanceCoin: BinanceCoin,
+-    BinanceInputOutput: BinanceInputOutput,
++    BinanceCoin: $Exact<BinanceCoin>,
++    BinanceInputOutput: $Exact<BinanceInputOutput>,
+     BinanceTransferMsg: BinanceTransferMsg,
+-    BinanceOrderMsg: BinanceOrderMsg,
++    BinanceOrderMsg: $Exact<BinanceOrderMsg>,
+     BinanceCancelMsg: BinanceCancelMsg,
+     BinanceSignedTx: $Exact<BinanceSignedTx>,
+     HDNodeType: $Exact<HDNodeType>,
+@@ -2254,30 +2260,30 @@ export type MessageType = {
+     EosGetPublicKey: EosGetPublicKey,
+     EosPublicKey: $Exact<EosPublicKey>,
+     EosTxHeader: $Exact<EosTxHeader>,
+-    EosSignTx: EosSignTx,
++    EosSignTx: $Exact<EosSignTx>,
+     EosTxActionRequest: EosTxActionRequest,
+-    EosAsset: EosAsset,
+-    EosPermissionLevel: EosPermissionLevel,
++    EosAsset: $Exact<EosAsset>,
++    EosPermissionLevel: $Exact<EosPermissionLevel>,
+     EosAuthorizationKey: $Exact<EosAuthorizationKey>,
+-    EosAuthorizationAccount: EosAuthorizationAccount,
+-    EosAuthorizationWait: EosAuthorizationWait,
+-    EosAuthorization: EosAuthorization,
+-    EosActionCommon: EosActionCommon,
+-    EosActionTransfer: EosActionTransfer,
+-    EosActionDelegate: EosActionDelegate,
+-    EosActionUndelegate: EosActionUndelegate,
+-    EosActionRefund: EosActionRefund,
+-    EosActionBuyRam: EosActionBuyRam,
+-    EosActionBuyRamBytes: EosActionBuyRamBytes,
+-    EosActionSellRam: EosActionSellRam,
+-    EosActionVoteProducer: EosActionVoteProducer,
+-    EosActionUpdateAuth: EosActionUpdateAuth,
+-    EosActionDeleteAuth: EosActionDeleteAuth,
+-    EosActionLinkAuth: EosActionLinkAuth,
+-    EosActionUnlinkAuth: EosActionUnlinkAuth,
+-    EosActionNewAccount: EosActionNewAccount,
++    EosAuthorizationAccount: $Exact<EosAuthorizationAccount>,
++    EosAuthorizationWait: $Exact<EosAuthorizationWait>,
++    EosAuthorization: $Exact<EosAuthorization>,
++    EosActionCommon: $Exact<EosActionCommon>,
++    EosActionTransfer: $Exact<EosActionTransfer>,
++    EosActionDelegate: $Exact<EosActionDelegate>,
++    EosActionUndelegate: $Exact<EosActionUndelegate>,
++    EosActionRefund: $Exact<EosActionRefund>,
++    EosActionBuyRam: $Exact<EosActionBuyRam>,
++    EosActionBuyRamBytes: $Exact<EosActionBuyRamBytes>,
++    EosActionSellRam: $Exact<EosActionSellRam>,
++    EosActionVoteProducer: $Exact<EosActionVoteProducer>,
++    EosActionUpdateAuth: $Exact<EosActionUpdateAuth>,
++    EosActionDeleteAuth: $Exact<EosActionDeleteAuth>,
++    EosActionLinkAuth: $Exact<EosActionLinkAuth>,
++    EosActionUnlinkAuth: $Exact<EosActionUnlinkAuth>,
++    EosActionNewAccount: $Exact<EosActionNewAccount>,
+     EosActionUnknown: $Exact<EosActionUnknown>,
+-    EosTxActionAck: EosTxActionAck,
++    EosTxActionAck: $Exact<EosTxActionAck>,
+     EosSignedTx: $Exact<EosSignedTx>,
+     EthereumSignTypedData: $Exact<EthereumSignTypedData>,
+     EthereumTypedDataStructRequest: $Exact<EthereumTypedDataStructRequest>,
+@@ -2331,24 +2337,24 @@ export type MessageType = {
+     RebootToBootloader: RebootToBootloader,
+     NEMGetAddress: NEMGetAddress,
+     NEMAddress: $Exact<NEMAddress>,
+-    NEMTransactionCommon: NEMTransactionCommon,
+-    NEMMosaic: NEMMosaic,
+-    NEMTransfer: NEMTransfer,
+-    NEMProvisionNamespace: NEMProvisionNamespace,
+-    NEMMosaicDefinition: NEMMosaicDefinition,
+-    NEMMosaicCreation: NEMMosaicCreation,
+-    NEMMosaicSupplyChange: NEMMosaicSupplyChange,
+-    NEMCosignatoryModification: NEMCosignatoryModification,
++    NEMTransactionCommon: $Exact<NEMTransactionCommon>,
++    NEMMosaic: $Exact<NEMMosaic>,
++    NEMTransfer: $Exact<NEMTransfer>,
++    NEMProvisionNamespace: $Exact<NEMProvisionNamespace>,
++    NEMMosaicDefinition: $Exact<NEMMosaicDefinition>,
++    NEMMosaicCreation: $Exact<NEMMosaicCreation>,
++    NEMMosaicSupplyChange: $Exact<NEMMosaicSupplyChange>,
++    NEMCosignatoryModification: $Exact<NEMCosignatoryModification>,
+     NEMAggregateModification: NEMAggregateModification,
+-    NEMImportanceTransfer: NEMImportanceTransfer,
+-    NEMSignTx: NEMSignTx,
++    NEMImportanceTransfer: $Exact<NEMImportanceTransfer>,
++    NEMSignTx: $Exact<NEMSignTx>,
+     NEMSignedTx: $Exact<NEMSignedTx>,
+     NEMDecryptMessage: NEMDecryptMessage,
+     NEMDecryptedMessage: $Exact<NEMDecryptedMessage>,
+     RippleGetAddress: RippleGetAddress,
+     RippleAddress: $Exact<RippleAddress>,
+     RipplePayment: $Exact<RipplePayment>,
+-    RippleSignTx: RippleSignTx,
++    RippleSignTx: $Exact<RippleSignTx>,
+     RippleSignedTx: $Exact<RippleSignedTx>,
+     StellarAsset: $Exact<StellarAsset>,
+     StellarGetAddress: StellarGetAddress,
+@@ -2375,13 +2381,13 @@ export type MessageType = {
+     TezosPublicKey: $Exact<TezosPublicKey>,
+     TezosContractID: $Exact<TezosContractID>,
+     TezosRevealOp: $Exact<TezosRevealOp>,
+-    TezosManagerTransfer: TezosManagerTransfer,
++    TezosManagerTransfer: $Exact<TezosManagerTransfer>,
+     TezosParametersManager: TezosParametersManager,
+     TezosTransactionOp: $Exact<TezosTransactionOp>,
+     TezosOriginationOp: $Exact<TezosOriginationOp>,
+     TezosDelegationOp: $Exact<TezosDelegationOp>,
+-    TezosProposalOp: TezosProposalOp,
+-    TezosBallotOp: TezosBallotOp,
++    TezosProposalOp: $Exact<TezosProposalOp>,
++    TezosBallotOp: $Exact<TezosBallotOp>,
+     TezosSignTx: $Exact<TezosSignTx>,
+     TezosSignedTx: $Exact<TezosSignedTx>,
+ };
+diff --git a/node_modules/trezor-connect/lib/typescript/backend/blockchain.d.ts b/node_modules/trezor-connect/lib/typescript/backend/blockchain.d.ts
+index 4d66cc3..484ee98 100644
+--- a/node_modules/trezor-connect/lib/typescript/backend/blockchain.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/backend/blockchain.d.ts
+@@ -6,6 +6,7 @@ import { TypedRawTransaction } from './transactions';
+ export interface BlockchainInfo {
+     coin: CoinInfo;
+     url: string;
++    cleanUrl?: string;
+     blockHash: string;
+     blockHeight: number;
+     decimals: number;
+diff --git a/node_modules/trezor-connect/lib/typescript/networks/binance.d.ts b/node_modules/trezor-connect/lib/typescript/networks/binance.d.ts
+index 8d46d1b..592a51a 100644
+--- a/node_modules/trezor-connect/lib/typescript/networks/binance.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/networks/binance.d.ts
+@@ -51,7 +51,7 @@ export type BinancePreparedMessage =
+           type: 'BinanceCancelMsg';
+       });
+ 
+-export type BinancePreparedTransaction = BinanceSDKTransaction & {
++export type BinancePreparedTransaction = Required<BinanceSDKTransaction> & {
+     messages: BinancePreparedMessage[];
+ };
+ 
+diff --git a/node_modules/trezor-connect/lib/typescript/networks/eos.d.ts b/node_modules/trezor-connect/lib/typescript/networks/eos.d.ts
+index 4919e31..e282887 100644
+--- a/node_modules/trezor-connect/lib/typescript/networks/eos.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/networks/eos.d.ts
+@@ -58,7 +58,7 @@ export type EosTxAction =
+               from: string;
+               to: string;
+               quantity: string;
+-              memo?: string;
++              memo: string;
+           };
+       })
+     | (EosTxActionCommon & {
+@@ -68,7 +68,7 @@ export type EosTxAction =
+               receiver: string;
+               stake_net_quantity: string;
+               stake_cpu_quantity: string;
+-              transfer?: boolean;
++              transfer: boolean;
+           };
+       })
+     | (EosTxActionCommon & {
+@@ -146,7 +146,7 @@ export type EosTxAction =
+ 
+ export interface EosSDKTransaction {
+     chainId: string;
+-    header?: EosTxHeader;
++    header: EosTxHeader;
+     actions: Array<EosTxAction | (EosTxActionCommon & { name: string; data: string })>;
+     // actions: EosTxAction[];
+ }
+diff --git a/node_modules/trezor-connect/lib/typescript/networks/nem.d.ts b/node_modules/trezor-connect/lib/typescript/networks/nem.d.ts
+index f85a757..348f5e5 100644
+--- a/node_modules/trezor-connect/lib/typescript/networks/nem.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/networks/nem.d.ts
+@@ -43,7 +43,7 @@ export interface TransactionCommon {
+     version: number;
+     timeStamp: number;
+     fee: number;
+-    deadline?: number;
++    deadline: number;
+     signer?: string;
+ }
+ 
+@@ -73,24 +73,24 @@ export type NEMAggregateModificationTransaction = TransactionCommon & {
+ 
+ export type NEMProvisionNamespaceTransaction = TransactionCommon & {
+     type: 0x2001;
+-    newPart?: string;
++    newPart: string;
+     parent?: string;
+-    rentalFeeSink?: string;
+-    rentalFee?: number;
++    rentalFeeSink: string;
++    rentalFee: number;
+ };
+ 
+ export type NEMMosaicCreationTransaction = TransactionCommon & {
+     type: 0x4001;
+     mosaicDefinition: MosaicDefinition;
+-    creationFeeSink?: string;
+-    creationFee?: number;
++    creationFeeSink: string;
++    creationFee: number;
+ };
+ 
+ export type NEMSupplyChangeTransaction = TransactionCommon & {
+     type: 0x4002;
+     mosaicId: MosaicID;
+     supplyType: number;
+-    delta?: number;
++    delta: number;
+ };
+ 
+ export type NEMRegularTransaction =
+diff --git a/node_modules/trezor-connect/lib/typescript/networks/ripple.d.ts b/node_modules/trezor-connect/lib/typescript/networks/ripple.d.ts
+index af02d0a..4a7ffc0 100644
+--- a/node_modules/trezor-connect/lib/typescript/networks/ripple.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/networks/ripple.d.ts
+@@ -21,9 +21,9 @@ export interface RipplePayment {
+ }
+ 
+ export interface RippleTransaction {
+-    fee?: string;
++    fee: string;
+     flags?: number;
+-    sequence?: number;
++    sequence: number;
+     maxLedgerVersion?: number; // Proto: "last_ledger_sequence"
+     payment: RipplePayment;
+ }
+diff --git a/node_modules/trezor-connect/lib/typescript/trezor/protobuf.d.ts b/node_modules/trezor-connect/lib/typescript/trezor/protobuf.d.ts
+index 312c823..b7b429f 100644
+--- a/node_modules/trezor-connect/lib/typescript/trezor/protobuf.d.ts
++++ b/node_modules/trezor-connect/lib/typescript/trezor/protobuf.d.ts
+@@ -28,24 +28,24 @@ export type BinancePublicKey = {
+ // BinanceSignTx
+ export type BinanceSignTx = {
+     address_n: number[];
+-    msg_count?: number;
+-    account_number?: number;
++    msg_count: number;
++    account_number: number;
+     chain_id?: string;
+     memo?: string;
+-    sequence?: number;
+-    source?: number;
++    sequence: number;
++    source: number;
+ };
+ 
+ // BinanceTxRequest
+ export type BinanceTxRequest = {};
+ 
+ export type BinanceCoin = {
+-    amount?: UintType;
+-    denom?: string;
++    amount: UintType;
++    denom: string;
+ };
+ 
+ export type BinanceInputOutput = {
+-    address?: string;
++    address: string;
+     coins: BinanceCoin[];
+ };
+ 
+@@ -78,13 +78,13 @@ export enum BinanceTimeInForce {
+ // BinanceOrderMsg
+ export type BinanceOrderMsg = {
+     id?: string;
+-    ordertype?: BinanceOrderType;
+-    price?: number;
+-    quantity?: number;
++    ordertype: BinanceOrderType;
++    price: number;
++    quantity: number;
+     sender?: string;
+-    side?: BinanceOrderSide;
++    side: BinanceOrderSide;
+     symbol?: string;
+-    timeinforce?: BinanceTimeInForce;
++    timeinforce: BinanceTimeInForce;
+ };
+ 
+ // BinanceCancelMsg
+@@ -1041,6 +1041,12 @@ export type ECDHSessionKey = {
+     public_key?: string;
+ };
+ 
++export enum DebugButton {
++    NO = 0,
++    YES = 1,
++    INFO = 2,
++}
++
+ // EosGetPublicKey
+ export type EosGetPublicKey = {
+     address_n: number[];
+@@ -1065,9 +1071,9 @@ export type EosTxHeader = {
+ // EosSignTx
+ export type EosSignTx = {
+     address_n: number[];
+-    chain_id?: string;
+-    header?: EosTxHeader;
+-    num_actions?: number;
++    chain_id: string;
++    header: EosTxHeader;
++    num_actions: number;
+ };
+ 
+ // EosTxActionRequest
+@@ -1076,13 +1082,13 @@ export type EosTxActionRequest = {
+ };
+ 
+ export type EosAsset = {
+-    amount?: UintType;
+-    symbol?: string;
++    amount: UintType;
++    symbol: string;
+ };
+ 
+ export type EosPermissionLevel = {
+-    actor?: string;
+-    permission?: string;
++    actor: string;
++    permission: string;
+ };
+ 
+ export type EosAuthorizationKey = {
+@@ -1093,117 +1099,117 @@ export type EosAuthorizationKey = {
+ };
+ 
+ export type EosAuthorizationAccount = {
+-    account?: EosPermissionLevel;
+-    weight?: number;
++    account: EosPermissionLevel;
++    weight: number;
+ };
+ 
+ export type EosAuthorizationWait = {
+-    wait_sec?: number;
+-    weight?: number;
++    wait_sec: number;
++    weight: number;
+ };
+ 
+ export type EosAuthorization = {
+-    threshold?: number;
++    threshold: number;
+     keys: EosAuthorizationKey[];
+     accounts: EosAuthorizationAccount[];
+     waits: EosAuthorizationWait[];
+ };
+ 
+ export type EosActionCommon = {
+-    account?: string;
+-    name?: string;
++    account: string;
++    name: string;
+     authorization: EosPermissionLevel[];
+ };
+ 
+ export type EosActionTransfer = {
+-    sender?: string;
+-    receiver?: string;
+-    quantity?: EosAsset;
+-    memo?: string;
++    sender: string;
++    receiver: string;
++    quantity: EosAsset;
++    memo: string;
+ };
+ 
+ export type EosActionDelegate = {
+-    sender?: string;
+-    receiver?: string;
+-    net_quantity?: EosAsset;
+-    cpu_quantity?: EosAsset;
+-    transfer?: boolean;
++    sender: string;
++    receiver: string;
++    net_quantity: EosAsset;
++    cpu_quantity: EosAsset;
++    transfer: boolean;
+ };
+ 
+ export type EosActionUndelegate = {
+-    sender?: string;
+-    receiver?: string;
+-    net_quantity?: EosAsset;
+-    cpu_quantity?: EosAsset;
++    sender: string;
++    receiver: string;
++    net_quantity: EosAsset;
++    cpu_quantity: EosAsset;
+ };
+ 
+ export type EosActionRefund = {
+-    owner?: string;
++    owner: string;
+ };
+ 
+ export type EosActionBuyRam = {
+-    payer?: string;
+-    receiver?: string;
+-    quantity?: EosAsset;
++    payer: string;
++    receiver: string;
++    quantity: EosAsset;
+ };
+ 
+ export type EosActionBuyRamBytes = {
+-    payer?: string;
+-    receiver?: string;
+-    bytes?: number;
++    payer: string;
++    receiver: string;
++    bytes: number;
+ };
+ 
+ export type EosActionSellRam = {
+-    account?: string;
+-    bytes?: number;
++    account: string;
++    bytes: number;
+ };
+ 
+ export type EosActionVoteProducer = {
+-    voter?: string;
+-    proxy?: string;
++    voter: string;
++    proxy: string;
+     producers: string[];
+ };
+ 
+ export type EosActionUpdateAuth = {
+-    account?: string;
+-    permission?: string;
+-    parent?: string;
+-    auth?: EosAuthorization;
++    account: string;
++    permission: string;
++    parent: string;
++    auth: EosAuthorization;
+ };
+ 
+ export type EosActionDeleteAuth = {
+-    account?: string;
+-    permission?: string;
++    account: string;
++    permission: string;
+ };
+ 
+ export type EosActionLinkAuth = {
+-    account?: string;
+-    code?: string;
+-    type?: string;
+-    requirement?: string;
++    account: string;
++    code: string;
++    type: string;
++    requirement: string;
+ };
+ 
+ export type EosActionUnlinkAuth = {
+-    account?: string;
+-    code?: string;
+-    type?: string;
++    account: string;
++    code: string;
++    type: string;
+ };
+ 
+ export type EosActionNewAccount = {
+-    creator?: string;
+-    name?: string;
+-    owner?: EosAuthorization;
+-    active?: EosAuthorization;
++    creator: string;
++    name: string;
++    owner: EosAuthorization;
++    active: EosAuthorization;
+ };
+ 
+ export type EosActionUnknown = {
+     data_size: number;
+-    data_chunk?: string;
++    data_chunk: string;
+ };
+ 
+ // EosTxActionAck
+ export type EosTxActionAck = {
+-    common?: EosActionCommon;
++    common: EosActionCommon;
+     transfer?: EosActionTransfer;
+     delegate?: EosActionDelegate;
+     undelegate?: EosActionUndelegate;
+@@ -1365,18 +1371,11 @@ export type EthereumVerifyMessage = {
+     address: string;
+ };
+ 
+-export enum Enum_BackupType {
+-    Bip39 = 0,
+-    Slip39_Basic = 1,
+-    Slip39_Advanced = 2,
+-}
+-export type BackupType = keyof typeof Enum_BackupType;
+-
+ // EthereumSignTypedHash
+ export type EthereumSignTypedHash = {
+     address_n: number[];
+     domain_separator_hash: string;
+-    message_hash: string;
++    message_hash?: string;
+ };
+ 
+ // EthereumTypedDataSignature
+@@ -1385,6 +1384,13 @@ export type EthereumTypedDataSignature = {
+     address: string;
+ };
+ 
++export enum Enum_BackupType {
++    Bip39 = 0,
++    Slip39_Basic = 1,
++    Slip39_Advanced = 2,
++}
++export type BackupType = keyof typeof Enum_BackupType;
++
+ export enum Enum_SafetyCheckLevel {
+     Strict = 0,
+     PromptAlways = 1,
+@@ -1449,7 +1455,6 @@ export type Features = {
+     fw_minor: number | null;
+     fw_patch: number | null;
+     fw_vendor: string | null;
+-    fw_vendor_keys: string | null;
+     unfinished_backup: boolean | null;
+     no_backup: boolean | null;
+     recovery_mode: boolean | null;
+@@ -1634,31 +1639,31 @@ export type NEMAddress = {
+ export type NEMTransactionCommon = {
+     address_n?: number[];
+     network?: number;
+-    timestamp?: number;
+-    fee?: UintType;
+-    deadline?: number;
++    timestamp: number;
++    fee: UintType;
++    deadline: number;
+     signer?: string;
+ };
+ 
+ export type NEMMosaic = {
+-    namespace?: string;
+-    mosaic?: string;
+-    quantity?: number;
++    namespace: string;
++    mosaic: string;
++    quantity: number;
+ };
+ 
+ export type NEMTransfer = {
+-    recipient?: string;
+-    amount?: UintType;
++    recipient: string;
++    amount: UintType;
+     payload?: string;
+     public_key?: string;
+     mosaics?: NEMMosaic[];
+ };
+ 
+ export type NEMProvisionNamespace = {
+-    namespace?: string;
++    namespace: string;
+     parent?: string;
+-    sink?: string;
+-    fee?: UintType;
++    sink: string;
++    fee: UintType;
+ };
+ 
+ export enum NEMMosaicLevy {
+@@ -1669,8 +1674,8 @@ export enum NEMMosaicLevy {
+ export type NEMMosaicDefinition = {
+     name?: string;
+     ticker?: string;
+-    namespace?: string;
+-    mosaic?: string;
++    namespace: string;
++    mosaic: string;
+     divisibility?: number;
+     levy?: NEMMosaicLevy;
+     fee?: UintType;
+@@ -1680,14 +1685,14 @@ export type NEMMosaicDefinition = {
+     supply?: number;
+     mutable_supply?: boolean;
+     transferable?: boolean;
+-    description?: string;
++    description: string;
+     networks?: number[];
+ };
+ 
+ export type NEMMosaicCreation = {
+-    definition?: NEMMosaicDefinition;
+-    sink?: string;
+-    fee?: UintType;
++    definition: NEMMosaicDefinition;
++    sink: string;
++    fee: UintType;
+ };
+ 
+ export enum NEMSupplyChangeType {
+@@ -1696,10 +1701,10 @@ export enum NEMSupplyChangeType {
+ }
+ 
+ export type NEMMosaicSupplyChange = {
+-    namespace?: string;
+-    mosaic?: string;
+-    type?: NEMSupplyChangeType;
+-    delta?: number;
++    namespace: string;
++    mosaic: string;
++    type: NEMSupplyChangeType;
++    delta: number;
+ };
+ 
+ export enum NEMModificationType {
+@@ -1708,8 +1713,8 @@ export enum NEMModificationType {
+ }
+ 
+ export type NEMCosignatoryModification = {
+-    type?: NEMModificationType;
+-    public_key?: string;
++    type: NEMModificationType;
++    public_key: string;
+ };
+ 
+ export type NEMAggregateModification = {
+@@ -1723,13 +1728,13 @@ export enum NEMImportanceTransferMode {
+ }
+ 
+ export type NEMImportanceTransfer = {
+-    mode?: NEMImportanceTransferMode;
+-    public_key?: string;
++    mode: NEMImportanceTransferMode;
++    public_key: string;
+ };
+ 
+ // NEMSignTx
+ export type NEMSignTx = {
+-    transaction?: NEMTransactionCommon;
++    transaction: NEMTransactionCommon;
+     multisig?: NEMTransactionCommon;
+     transfer?: NEMTransfer;
+     cosigning?: boolean;
+@@ -1779,11 +1784,11 @@ export type RipplePayment = {
+ // RippleSignTx
+ export type RippleSignTx = {
+     address_n: number[];
+-    fee?: UintType;
++    fee: UintType;
+     flags?: number;
+-    sequence?: number;
++    sequence: number;
+     last_ledger_sequence?: number;
+-    payment?: RipplePayment;
++    payment: RipplePayment;
+ };
+ 
+ // RippleSignedTx
+@@ -2017,8 +2022,8 @@ export type TezosRevealOp = {
+ };
+ 
+ export type TezosManagerTransfer = {
+-    destination?: TezosContractID;
+-    amount?: UintType;
++    destination: TezosContractID;
++    amount: UintType;
+ };
+ 
+ export type TezosParametersManager = {
+@@ -2063,8 +2068,8 @@ export type TezosDelegationOp = {
+ };
+ 
+ export type TezosProposalOp = {
+-    source?: string;
+-    period?: number;
++    source: string;
++    period: number;
+     proposals: string[];
+ };
+ 
+@@ -2075,10 +2080,10 @@ export enum TezosBallotType {
+ }
+ 
+ export type TezosBallotOp = {
+-    source?: string;
+-    period?: number;
+-    proposal?: string;
+-    ballot?: TezosBallotType;
++    source: string;
++    period: number;
++    proposal: string;
++    ballot: TezosBallotType;
+ };
+ 
+ // TezosSignTx
