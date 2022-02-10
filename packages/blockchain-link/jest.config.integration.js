@@ -10,7 +10,7 @@ module.exports = {
         },
     },
     moduleFileExtensions: ['js', 'ts', 'json'],
-    testMatch: ['**/tests/integration/*.ts'],
+    testMatch: ['**/tests/integration/electrum.ts'],
     collectCoverage: false,
     moduleDirectories: ['node_modules', './'], // './' - ia a home directory for the 'trezor-blockchain-link' library (lib/index.js)
     transform: {
