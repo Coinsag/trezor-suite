@@ -37,7 +37,7 @@ const initialSettings: ConnectSettings = {
 
 let currentSettings: ConnectSettings = initialSettings;
 
-const parseManifest = (manifest: ?Manifest): ?Manifest => {
+const parseManifest = (manifest?: Manifest) => {
     if (!manifest) return;
     if (typeof manifest.email !== 'string') return;
     if (typeof manifest.appUrl !== 'string') return;
@@ -49,10 +49,12 @@ const parseManifest = (manifest: ?Manifest): ?Manifest => {
 };
 
 export const getEnv = () => {
-    // $FlowIssue: chrome is not declared outside the project
     if (
+        // @ts-ignore
         typeof chrome !== 'undefined' &&
+        // @ts-ignore
         chrome.runtime &&
+        // @ts-ignore
         typeof chrome.runtime.onConnect !== 'undefined'
     ) {
         return 'webextension';
@@ -95,9 +97,10 @@ export const corsValidator = (url?: string) => {
         return url;
 };
 
-export const parse = (input: $Shape<ConnectSettings> = {}) => {
-    const settings: ConnectSettings = { ...currentSettings };
-    if (Object.prototype.hasOwnProperty.call(input, 'debug')) {
+export const parse = (input: ConnectSettings = {}) => {
+    const settings = { ...currentSettings };
+    if ('debug' in input) {
+        // todo: ???
         if (Array.isArray(input)) {
             // enable log with prefix
         }
@@ -112,6 +115,7 @@ export const parse = (input: $Shape<ConnectSettings> = {}) => {
         settings.connectSrc = input.connectSrc;
     }
     // For debugging purposes `connectSrc` could be defined in `global.__TREZOR_CONNECT_SRC` variable
+    // @ts-ignore
     if (typeof global !== 'undefined' && typeof global.__TREZOR_CONNECT_SRC === 'string') {
         settings.connectSrc = corsValidator(global.__TREZOR_CONNECT_SRC);
         settings.debug = true;
